@@ -1,6 +1,6 @@
 #!/bin/bash
-# Mantém todos os usuários locais com o shell de gravação, menos os de emergência.
-# Uso: tlog-record-all enable USUARIO... | sync | status | disable
+# Keeps all local users on the recording shell, except the emergency users.
+# Usage: tlog-record-all enable USER... | sync | status | disable
 set -euo pipefail
 
 RECORDER=/usr/bin/tlog-rec-session
@@ -20,13 +20,13 @@ can_login() { case "$1" in */nologin|*/false|*/sync|*/shutdown|*/halt) return 1 
 has_saved_shell() { awk -F: -v user="$1" '$1 == user { found = 1 } END { exit !found }' "$SAVED_SHELLS"; }
 is_admin() { id -nG "$1" | tr ' ' '\n' | grep -qxE 'sudo|wheel|root'; }
 
-# Usuários comuns de /etc/passwd: nome e shell, um por linha.
+# Regular users from /etc/passwd: name and shell, one per line.
 regular_users() {
   awk -F: -v min="$(login_defs UID_MIN 1000)" -v max="$(login_defs UID_MAX 60000)" \
     '$3 >= min && $3 <= max { print $1 ":" $7 }' /etc/passwd
 }
 
-# useradd e adduser também travam /etc/passwd: uma colisão não pode fazer o usuário ficar sem gravação.
+# useradd and adduser also lock /etc/passwd: a collision must not leave a user unrecorded.
 change_shell() {
   local attempt
   for attempt in 1 2 3 4 5; do
@@ -65,7 +65,7 @@ enable_all() {
     if is_admin "$user" && [ "$(passwd -S "$user" | awk '{print $2}')" = 'P' ]; then usable=1; fi
   done
   [ "$usable" -eq 1 ] || fail 'Ao menos um usuário de emergência precisa ter senha e estar no grupo sudo, ou ninguém conseguiria desfazer isto.'
-  # A lista diz quais contas não são gravadas: não interessa aos usuários da máquina.
+  # The list says which accounts are not recorded, which is not for the users of the host to see.
   install -d -m 700 "$CONFIG_DIR"
   chmod 700 "$CONFIG_DIR"
   printf '%s\n' "$@" > "$EXCLUDED_FILE"
@@ -80,7 +80,7 @@ show_status() {
   need_root
   printf 'Gravar todos: %s\n' "$(systemctl is-active "$PATH_UNIT" 2>/dev/null || true)"
   local user shell
-  # Fora da faixa de usuários comuns, mas com shell: o login direto delas não é gravado.
+  # Outside the regular user range, but with a shell: their direct login is not recorded.
   while IFS=: read -r user shell; do
     if can_login "$shell"; then printf 'FORA DA GRAVAÇÃO (conta de sistema)   %s\n' "$user"; fi
   done < <(awk -F: -v min="$(login_defs UID_MIN 1000)" -v max="$(login_defs UID_MAX 60000)" \

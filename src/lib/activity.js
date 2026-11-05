@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 const { capWarnings, normalizeMessages, parseTiming, validPos } = require('./tlog2asciicast');
 const { isoFromSeconds } = require('./safe_time');
 
@@ -40,7 +41,7 @@ function buildActivity(messages, { idleGapMs = IDLE_GAP_MS } = {}) {
     try {
       tokens = parseTiming(String(message.timing ?? ''));
     } catch (error) {
-      problems.add(`Mensagem ${message.id} ignorada: timing inválido (${error.message}).`);
+      problems.add(t('warning.badTiming', { id: message.id, reason: error.message }));
       continue;
     }
     if (validPos(message.pos)) cursor = message.pos;

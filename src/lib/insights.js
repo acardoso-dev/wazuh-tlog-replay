@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 const { convert } = require('./tlog2asciicast');
 const { DEFAULT_SETTINGS } = require('./settings');
 const { buildActivity } = require('./activity');
@@ -37,8 +38,8 @@ async function buildInsights({ rec, messages, searchLogs, searchAlerts, onAlertE
   const activity = buildActivity(messages, { idleGapMs: settings.idleSeconds * 1000 });
   const detection = compileDetection(settings);
   const { commands, promptsSeen, omitted, limited } = detectCommands(convert(messages).events, detection);
-  if (omitted > 0) activity.warnings.push(`Só os primeiros ${commands.length} comandos críticos são listados; outros ${omitted} ficaram de fora. Veja o replay.`);
-  if (limited) activity.warnings.push('A saída desta sessão tem edições de linha em excesso: comandos podem não ter sido reconhecidos. Veja o replay.');
+  if (omitted > 0) activity.warnings.push(t('warning.commandsOmitted', { shown: commands.length, omitted }));
+  if (limited) activity.warnings.push(t('warning.tooManyEdits'));
   const { host, user } = messages.find((message) => message.host && message.user) ?? {};
   const startMs = activity.startedAt ? Date.parse(activity.startedAt) : null;
   const capture = commands.map((command) => ({ ...command, evidence: 'capture' }));

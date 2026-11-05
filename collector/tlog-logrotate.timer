@@ -1,7 +1,7 @@
 # /etc/systemd/system/tlog-logrotate.timer
-# O logrotate só confere o tamanho quando roda; o timer padrão dele é diário.
+# logrotate only checks the size when it runs, and its default timer is daily.
 [Unit]
-Description=Confere o log de sessões do tlog a cada 5 minutos
+Description=Check the tlog session log every 5 minutes
 
 [Timer]
 OnCalendar=*:0/5

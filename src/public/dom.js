@@ -1,3 +1,5 @@
+import { getLocale } from '../lib/i18n';
+
 /** Cria elementos sem innerHTML: host, usuário e comandos vêm das máquinas gravadas e não são confiáveis. */
 export function h(tag, props = {}, ...children) {
   const element = document.createElement(tag);
@@ -14,8 +16,8 @@ export function h(tag, props = {}, ...children) {
   return element;
 }
 
-export const formatDate = (value) => (value ? new Date(value).toLocaleString('pt-BR') : '-');
-export const formatTime = (value) => new Date(value).toLocaleTimeString('pt-BR');
+export const formatDate = (value) => (value ? new Date(value).toLocaleString(getLocale()) : '-');
+export const formatTime = (value) => new Date(value).toLocaleTimeString(getLocale());
 
 export function formatDuration(durationSeconds) {
   if (durationSeconds === null || durationSeconds === undefined) return '-';

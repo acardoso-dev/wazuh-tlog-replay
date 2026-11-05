@@ -3,20 +3,47 @@ import playerCss from 'asciinema-player/dist/bundle/asciinema-player.css';
 import appCss from './app.css';
 import logoUrl from '../../assets/brand/logo.svg';
 import { agentIdFromUrl } from '../lib/agent_url';
+import { LOCALES, LOCALE_HEADER, getLocale, preferredLocale, setLocale, t, tn } from '../lib/i18n';
 import { withMarkers } from '../lib/replay_markers';
 import { h, formatDate, formatDuration } from './dom';
-import { SESSION_FILTERS, createBalloon, filterAvailable, matchesFilter, renderInsights, sessionEnd } from './insights';
+import { sessionFilters, createBalloon, filterAvailable, matchesFilter, renderInsights, sessionEnd } from './insights';
 import { createSettingsPanel } from './settings_panel';
 import { createDiagnosticsPanel } from './diagnostics_panel';
 import { createInstallPanel } from './install_panel';
 import { DEFAULT_SETTINGS } from '../lib/settings';
 
 const API = '/api/tlog_replay/sessions';
+const LOCALE_STORAGE_KEY = 'tlogReplay.locale';
+
+function readStoredLocale() {
+  try {
+    return window.localStorage.getItem(LOCALE_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function storeLocale(locale) {
+  try {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch {
+    // Sem acesso ao armazenamento do navegador, a escolha vale até fechar o app.
+  }
+}
+
+/** Toda chamada à API leva o idioma, para o servidor responder avisos e erros nele. */
+const localizedHttp = (http) => {
+  const withLocale = (options = {}) => ({ ...options, headers: { ...options.headers, [LOCALE_HEADER]: getLocale() } });
+  return {
+    get: (path, options) => http.get(path, withLocale(options)),
+    put: (path, options) => http.put(path, withLocale(options)),
+  };
+};
 
 const errorMessage = (error) =>
-  error?.body?.message || error?.message || 'Erro inesperado ao falar com o servidor.';
+  error?.body?.message || error?.message || t('common.unexpectedError');
 
-function mountApp({ http, application, chrome }, { element, history }) {
+function mountApp({ http, application, chrome }, { element, history }, onLocaleChange) {
   let agentId = agentIdFromUrl(window.location.search);
   let player = null;
   let playerRec = null;
@@ -35,35 +62,35 @@ function mountApp({ http, application, chrome }, { element, history }) {
   style.textContent = `${playerCss}\n${appCss}`;
 
   const inputs = {
-    host: h('input', { type: 'text', 'aria-label': 'Máquina', placeholder: 'web01' }),
-    user: h('input', { type: 'text', 'aria-label': 'Usuário', placeholder: 'root' }),
-    q: h('input', { type: 'text', 'aria-label': 'Texto na saída', placeholder: 'rm -rf' }),
-    from: h('input', { type: 'datetime-local', 'aria-label': 'De' }),
-    to: h('input', { type: 'datetime-local', 'aria-label': 'Até' }),
+    host: h('input', { type: 'text', 'aria-label': t('sessions.machine'), placeholder: 'web01' }),
+    user: h('input', { type: 'text', 'aria-label': t('sessions.user'), placeholder: 'root' }),
+    q: h('input', { type: 'text', 'aria-label': t('sessions.outputText'), placeholder: 'rm -rf' }),
+    from: h('input', { type: 'datetime-local', 'aria-label': t('sessions.from') }),
+    to: h('input', { type: 'datetime-local', 'aria-label': t('sessions.to') }),
   };
   const label = (text, input) => h('label', {}, h('span', {}, text), input);
-  const hostFilter = label('Máquina', inputs.host);
-  const heading = h('h1', {}, 'Gravações de sessão');
+  const hostFilter = label(t('sessions.machine'), inputs.host);
+  const heading = h('h1', {}, t('sessions.title'));
   const agentBar = h('div', { className: 'tlog-agent', hidden: 'hidden' });
 
   function renderAgentBar(agent) {
     chrome?.setBreadcrumbs?.([
       { text: 'Session Replay' },
-      ...(agentId ? [{ text: agent?.name ?? `Agente ${agentId}` }] : []),
+      ...(agentId ? [{ text: agent?.name ?? t('sessions.agent', { id: agentId }) }] : []),
     ]);
     hostFilter.toggleAttribute('hidden', Boolean(agentId));
     if (!agentId) {
-      heading.textContent = 'Gravações de sessão';
+      heading.textContent = t('sessions.title');
       agentBar.setAttribute('hidden', 'hidden');
       agentBar.replaceChildren();
       return;
     }
-    heading.textContent = `Gravações de sessão de ${agent?.name ?? `agente ${agentId}`}`;
+    heading.textContent = t('sessions.titleForAgent', { name: agent?.name ?? t('sessions.agentLower', { id: agentId }) });
     agentBar.removeAttribute('hidden');
     const details = agent?.found
-      ? `Agente ${agent.id} · Máquina ${agent.hostname}`
-      : `Agente ${agentId}`;
-    const back = h('a', {}, 'Voltar ao agente');
+      ? t('sessions.agentDetails', { id: agent.id, host: agent.hostname })
+      : t('sessions.agent', { id: agentId });
+    const back = h('a', {}, t('sessions.backToAgent'));
     back.href = application.getUrlForApp('endpoints-summary', {
       path: `#/agents?tab=welcome&agent=${encodeURIComponent(agentId)}`,
     });
@@ -81,7 +108,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
             loadSessions();
           },
         },
-        'Ver todas as sessões'
+        t('sessions.viewAll')
       )
     );
   }
@@ -97,17 +124,17 @@ function mountApp({ http, application, chrome }, { element, history }) {
   const legend = h(
     'p',
     { className: 'tlog-legend', hidden: 'hidden' },
-    legendItem('tlog-legend-active', 'Com atividade'),
+    legendItem('tlog-legend-active', t('sessions.legend.active')),
     h('span', {}, h('i', { className: 'tlog-legend-idle' }), idleLegend),
-    legendItem('tlog-pin-sample tlog-kind-destructive', 'Destrutivo', 'destructive'),
-    legendItem('tlog-pin-sample tlog-kind-pipe', 'Pipe para shell', 'pipe'),
-    legendItem('tlog-pin-sample tlog-kind-sudo', 'sudo ou su', 'sudo su'),
+    legendItem('tlog-pin-sample tlog-kind-destructive', t('kind.destructive'), 'destructive'),
+    legendItem('tlog-pin-sample tlog-kind-pipe', t('kind.pipe'), 'pipe'),
+    legendItem('tlog-pin-sample tlog-kind-sudo', t('sessions.legend.sudoSu'), 'sudo su'),
     legendItem('tlog-pin-sample tlog-kind-ssh', 'SSH', 'ssh'),
-    h('span', {}, 'O fim vem do alerta de encerramento, quando existe; senão, é a última saída gravada.')
+    h('span', {}, t('sessions.legend.end'))
   );
-  const filterBar = h('div', { className: 'tlog-session-filters', role: 'group', 'aria-label': 'Filtrar sessões', hidden: 'hidden' });
+  const filterBar = h('div', { className: 'tlog-session-filters', role: 'group', 'aria-label': t('sessions.filter.label'), hidden: 'hidden' });
   const filterStatus = h('span', { className: 'tlog-quiet', role: 'status' });
-  const filterButtons = SESSION_FILTERS.map(([id, text]) => {
+  const filterButtons = sessionFilters().map(([id, text]) => {
     const button = h('button', { type: 'button', onClick: () => applyFilter(id) }, text);
     button.dataset.id = id;
     button.dataset.text = text;
@@ -118,7 +145,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
   /** Mostra só o que as configurações deixam ligado. */
   function applySettings(values) {
     settings = values;
-    idleLegend.textContent = `Ociosa: ${formatDuration(values.idleSeconds)} ou mais sem dados gravados`;
+    idleLegend.textContent = t('sessions.legend.idle', { duration: formatDuration(values.idleSeconds) });
     legend.querySelectorAll('[data-kinds]').forEach((item) => {
       item.toggleAttribute('hidden', !item.dataset.kinds.split(' ').some((kind) => values.kinds.includes(kind)));
     });
@@ -139,9 +166,9 @@ function mountApp({ http, application, chrome }, { element, history }) {
     }
     let message = '';
     if (sessionFilter !== 'all') {
-      if (!complete) message = `Analisando ${done} de ${sessionRows.length} sessões...`;
-      else if (failed > 0) message = `${failed} sessão(ões) não puderam ser analisadas.`;
-      else if (!sessionRows.some((state) => matchesFilter(state.insights, sessionFilter))) message = 'Nenhuma sessão com este tipo de evento.';
+      if (!complete) message = t('sessions.filter.analyzing', { done, total: sessionRows.length });
+      else if (failed > 0) message = tn('sessions.filter.failed', failed);
+      else if (!sessionRows.some((state) => matchesFilter(state.insights, sessionFilter))) message = t('sessions.filter.noMatch');
     }
     filterStatus.textContent = message;
   }
@@ -167,7 +194,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
       h(
         'tr',
         {},
-        ...['Início', 'Máquina', 'Usuário', 'Duração', 'Timeline', 'Pedaços', ''].map((title) =>
+        ...[t('sessions.column.start'), t('sessions.machine'), t('sessions.user'), t('sessions.column.duration'), t('sessions.column.timeline'), t('sessions.column.chunks'), ''].map((title) =>
           h('th', { scope: 'col' }, title)
         )
       )
@@ -204,7 +231,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
 
     const title = `${session.user ?? '?'}@${session.host ?? '?'} · ${formatDate(insights?.startedAt ?? session.startedAt)}`;
     const showTitle = () => {
-      replayTitle.textContent = moment ? `${title} · no momento ${moment.label}` : title;
+      replayTitle.textContent = moment ? t('sessions.replayAtMoment', { title, moment: moment.label }) : title;
     };
     const reveal = () => {
       replaySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -224,7 +251,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
     replaySection.removeAttribute('hidden');
     showTitle();
     replayWarnings.replaceChildren();
-    replayStage.append(h('p', {}, 'Carregando a gravação...'));
+    replayStage.append(h('p', {}, t('sessions.loadingRecording')));
 
     try {
       const data = await http.get(`${API}/${encodeURIComponent(session.rec)}`);
@@ -303,20 +330,20 @@ function mountApp({ http, application, chrome }, { element, history }) {
     }
 
     status.className = 'tlog-status';
-    status.textContent = 'Carregando...';
+    status.textContent = t('common.loading');
     try {
       const { sessions, agent } = await http.get(API, { query });
       if (request !== listRequest) return;
       if (agentId) renderAgentBar(agent);
       if (agent && !agent.found) {
-        status.textContent = `O agente ${agentId} ainda não está no inventário do Wazuh, então não é possível identificar a máquina dele. Tente de novo em alguns minutos.`;
+        status.textContent = t('sessions.agentNotFound', { id: agentId });
       } else {
         status.textContent =
           sessions.length === 0
-            ? 'Nenhuma sessão encontrada. Confira os filtros ou se esta máquina está sendo gravada.'
-            : `${sessions.length} sessão(ões), da mais recente para a mais antiga.`;
+            ? t('sessions.empty')
+            : tn('sessions.count', sessions.length);
         if (sessions.length === 0 && agentId) {
-          status.append(' ', h('button', { type: 'button', className: 'tlog-link', onClick: () => openInstall() }, 'Como instalar nesta máquina'));
+          status.append(' ', h('button', { type: 'button', className: 'tlog-link', onClick: () => openInstall() }, t('sessions.howToInstall')));
         }
       }
       selectedRow = null;
@@ -327,27 +354,27 @@ function mountApp({ http, application, chrome }, { element, history }) {
       tableBody.replaceChildren(
         ...sessions.flatMap((session) => {
           const incomplete = session.maxId !== null && session.maxId !== session.messages;
-          const startCell = h('td', { 'data-label': 'Início' }, formatDate(session.startedAt));
-          const durationCell = h('td', { 'data-label': 'Duração' }, formatDuration(session.durationSeconds));
+          const startCell = h('td', { 'data-label': t('sessions.column.start') }, formatDate(session.startedAt));
+          const durationCell = h('td', { 'data-label': t('sessions.column.duration') }, formatDuration(session.durationSeconds));
           const timelineCell = h('td', { className: 'tlog-timeline' }, h('div', { className: 'tlog-timeline-bar tlog-timeline-bar--pins' }));
-          const summaryCell = h('td', { colSpan: '7' }, h('span', { className: 'tlog-quiet' }, 'Analisando...'));
+          const summaryCell = h('td', { colSpan: '7' }, h('span', { className: 'tlog-quiet' }, t('sessions.analyzing')));
           const row = h(
             'tr',
             { className: 'tlog-session' },
             startCell,
-            h('td', { 'data-label': 'Máquina' }, session.host ?? '-'),
-            h('td', { 'data-label': 'Usuário' }, session.user ?? '-'),
+            h('td', { 'data-label': t('sessions.machine') }, session.host ?? '-'),
+            h('td', { 'data-label': t('sessions.user') }, session.user ?? '-'),
             durationCell,
             timelineCell,
             h(
               'td',
-              { 'data-label': 'Pedaços' },
+              { 'data-label': t('sessions.column.chunks') },
               String(session.messages),
-              incomplete && !query.q ? h('span', { className: 'tlog-badge' }, 'incompleta') : null
+              incomplete && !query.q ? h('span', { className: 'tlog-badge' }, t('sessions.incomplete')) : null
             )
           );
           row.append(
-            h('td', {}, h('button', { type: 'button', onClick: () => openSession(session, row, state.insights) }, 'Reproduzir'))
+            h('td', {}, h('button', { type: 'button', onClick: () => openSession(session, row, state.insights) }, t('sessions.play')))
           );
           const extra = h('tr', { className: 'tlog-session-extra' }, summaryCell);
           const state = { row, extra, insights: null, done: false, failed: false };
@@ -370,7 +397,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
               if (request !== listRequest) return;
               state.failed = true;
               timelineCell.replaceChildren(
-                h('span', { className: 'tlog-error', title: errorMessage(error) }, 'Timeline indisponível')
+                h('span', { className: 'tlog-error', title: errorMessage(error) }, t('sessions.timelineUnavailable'))
               );
               summaryCell.replaceChildren();
             }
@@ -424,11 +451,11 @@ function mountApp({ http, application, chrome }, { element, history }) {
       },
     },
     hostFilter,
-    label('Usuário', inputs.user),
-    label('Texto na saída', inputs.q),
-    label('De', inputs.from),
-    label('Até', inputs.to),
-    h('button', { type: 'submit' }, 'Buscar')
+    label(t('sessions.user'), inputs.user),
+    label(t('sessions.outputText'), inputs.q),
+    label(t('sessions.from'), inputs.from),
+    label(t('sessions.to'), inputs.to),
+    h('button', { type: 'submit' }, t('sessions.search'))
   );
 
   const sessionsPanel = h(
@@ -442,10 +469,10 @@ function mountApp({ http, application, chrome }, { element, history }) {
     replaySection
   );
   const TABS = [
-    { id: 'sessions', title: 'Sessões', panel: sessionsPanel },
-    { id: 'settings', title: 'Configurações', panel: settingsPanel.element },
-    { id: 'diagnostics', title: 'Diagnóstico', panel: diagnosticsPanel.element, onOpen: () => diagnosticsPanel.loadOnce() },
-    { id: 'install', title: 'Instalar', panel: installPanel.element, onOpen: () => { installPanel.loadOnce(); installPanel.refresh(); } },
+    { id: 'sessions', title: t('tabs.sessions'), panel: sessionsPanel },
+    { id: 'settings', title: t('tabs.settings'), panel: settingsPanel.element },
+    { id: 'diagnostics', title: t('tabs.diagnostics'), panel: diagnosticsPanel.element, onOpen: () => diagnosticsPanel.loadOnce() },
+    { id: 'install', title: t('tabs.install'), panel: installPanel.element, onOpen: () => { installPanel.loadOnce(); installPanel.refresh(); } },
   ];
   const openInstall = () => selectTab(TABS.find((tab) => tab.id === 'install'));
   const selectTab = (tab, { focus = false, remember = true } = {}) => {
@@ -467,7 +494,7 @@ function mountApp({ http, application, chrome }, { element, history }) {
       history?.replace({ search: text ? `?${text}` : '' });
     }
   };
-  const tabList = h('div', { className: 'tlog-tabs', role: 'tablist', 'aria-label': 'Seções do Session Replay' });
+  const tabList = h('div', { className: 'tlog-tabs', role: 'tablist', 'aria-label': t('tabs.label') });
   TABS.forEach((tab, index) => {
     tab.panel.setAttribute('role', 'tabpanel');
     tab.panel.setAttribute('aria-label', tab.title);
@@ -487,16 +514,31 @@ function mountApp({ http, application, chrome }, { element, history }) {
     tabList.append(tab.button);
   });
 
+  const languageSelect = h(
+    'label',
+    { className: 'tlog-language' },
+    h('span', {}, t('language.label')),
+    h(
+      'select',
+      { onChange: (event) => onLocaleChange(event.target.value) },
+      ...LOCALES.map(({ id, name }) => {
+        const option = h('option', { value: id }, name);
+        option.selected = id === getLocale();
+        return option;
+      })
+    )
+  );
+
   // O contêiner mede a área do app, que muda com o menu lateral do dashboard. O balão fica fora
   // dele: contêineres mudam a referência de position: fixed.
   const root = h(
     'div',
-    { className: 'tlog-app' },
+    { className: 'tlog-app', lang: getLocale() },
     style,
     h(
       'div',
       { className: 'tlog-container' },
-      h('div', { className: 'tlog-title' }, h('img', { src: logoUrl, alt: '', width: '32', height: '32' }), heading),
+      h('div', { className: 'tlog-title' }, h('img', { src: logoUrl, alt: '', width: '32', height: '32' }), heading, languageSelect),
       agentBar,
       tabList,
       ...TABS.map((tab) => tab.panel),
@@ -536,4 +578,17 @@ function mountApp({ http, application, chrome }, { element, history }) {
 
 // Chamado pelo carregador fixo (src/public/index.js). Mudar esta assinatura quebra navegadores
 // que ainda têm o carregador em cache.
-export const mount = mountApp;
+export function mount({ http, application, chrome }, params) {
+  setLocale(preferredLocale(readStoredLocale(), window.navigator.languages ?? [window.navigator.language]));
+  const core = { http: localizedHttp(http), application, chrome };
+  let unmount = null;
+  // A tela é montada de novo no idioma novo. A aba continua a mesma, porque fica no endereço.
+  const changeLocale = (locale) => {
+    unmount();
+    setLocale(locale);
+    storeLocale(getLocale());
+    unmount = mountApp(core, params, changeLocale);
+  };
+  unmount = mountApp(core, params, changeLocale);
+  return () => unmount();
+}

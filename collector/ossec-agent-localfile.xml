@@ -1,4 +1,4 @@
-<!-- Opcional e não recomendado: envia o conteúdo das sessões ao manager. Veja "Dados nos alertas" em docs/limitacoes.md. -->
+<!-- Optional and not recommended: it sends session content to the manager. See "Data in alerts" in docs/en/limitations.md. -->
 <localfile>
   <log_format>json</log_format>
   <location>/var/log/tlog/tlog.log</location>

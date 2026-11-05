@@ -1,5 +1,7 @@
 # Identidade visual
 
+[English](en/visual-identity.md)
+
 <img src="../assets/brand/logo.svg" alt="Logo do Session Replay" width="128">
 
 O logo une três ideias: a **seta circular** do replay, o **prompt** do terminal e o **cursor âmbar**, que lembra os pontos críticos marcados na timeline.
@@ -11,7 +13,7 @@ O logo une três ideias: a **seta circular** do replay, o **prompt** do terminal
 | [`logo.svg`](../assets/brand/logo.svg) | Logo principal, com fundo escuro. Também aparece no cabeçalho do plugin |
 | [`logo-transparent.svg`](../assets/brand/logo-transparent.svg) | Sem fundo, para superfícies claras |
 | [`logo-512.png`](../assets/brand/logo-512.png) e [`logo-128.png`](../assets/brand/logo-128.png) | Onde SVG não é aceito |
-| [`banner.png`](../assets/brand/banner.png) | Topo do README |
+| [`banner.png`](../assets/brand/banner.png) e [`banner-en.png`](../assets/brand/banner-en.png) | Topo dos READMEs em português e em inglês |
 | [`social-preview.png`](../assets/brand/social-preview.png) | Imagem de compartilhamento do repositório, em 1280 × 640 |
 
 ## Cores
@@ -34,7 +36,7 @@ O logo une três ideias: a **seta circular** do replay, o **prompt** do terminal
 
 ## Imagens das telas
 
-As imagens de `docs/images` são geradas pelo ambiente simulado, com dados fictícios:
+As imagens de `docs/images` são geradas pelo ambiente simulado, com dados fictícios. As em inglês ficam em `docs/images/en`:
 
 ```bash
 npm run build -- --osd-version=2.19.6

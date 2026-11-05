@@ -1,5 +1,7 @@
 # Política de segurança
 
+[English](docs/en/security-policy.md)
+
 ## Como relatar uma falha
 
 **Não abra uma issue pública.** Use o relato privado do GitHub, na aba [Security](https://github.com/acardoso-dev/wazuh-tlog-replay/security/advisories/new) deste repositório.
@@ -18,7 +20,7 @@ Este é um projeto mantido por voluntários, sem prazo garantido de resposta. O 
 
 | Versão | Situação |
 |---|---|
-| 0.8.x mais recente | Recebe correções |
+| 0.9.x mais recente | Recebe correções |
 | Anteriores à 0.8.3 | Têm [falhas conhecidas](docs/analise-de-seguranca.md). Atualize |
 
 ## O que considerar ao instalar

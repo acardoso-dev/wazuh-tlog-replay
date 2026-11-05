@@ -1,28 +1,28 @@
 <!--
-  Adicione ao /var/ossec/etc/rules/local_rules.xml do manager.
-  Ajuste os IDs se já estiverem em uso.
+  Add to /var/ossec/etc/rules/local_rules.xml on the manager.
+  Change the IDs if they are already in use.
 
-  Valide antes de reiniciar: uma regra inválida impede o analysisd de iniciar.
-  No JSON do tlog, `id` e `user` são campos estáticos do Wazuh. Por isso `id` usa <id>,
-  e não <field name="id">, que é rejeitado.
+  Validate before restarting: an invalid rule prevents analysisd from starting.
+  In the tlog JSON, `id` and `user` are Wazuh static fields. That is why `id` uses <id>,
+  and not <field name="id">, which is rejected.
 
-  O agente não precisa ler o log do tlog. Estas regras protegem as máquinas em que ele já lê:
-  um alerta levaria o texto da sessão para wazuh-alerts-*, onde quem lê alertas o veria mesmo
-  sem acesso a tlog-*. Só suba o nível da regra 100501 aceitando isso.
+  The agent does not need to read the tlog log. These rules protect hosts where it already does:
+  an alert would take the session text to wazuh-alerts-*, where anyone who reads alerts would see
+  it even without access to tlog-*. Only raise the level of rule 100501 if you accept that.
 -->
 <group name="tlog,session_recording,">
-  <!-- Nível 0: cada pedaço é analisado, mas não vira alerta. As gravações ficam no índice tlog-*. -->
+  <!-- Level 0: each chunk is analyzed, but does not become an alert. Recordings stay in the tlog-* index. -->
   <rule id="100500" level="0">
     <decoded_as>json</decoded_as>
     <field name="rec">\.+</field>
     <field name="timing">\.+</field>
-    <description>Pedaço de gravação de sessão tlog</description>
+    <description>tlog session recording chunk</description>
   </rule>
 
-  <!-- id=1 é o primeiro pedaço de cada gravação, ou seja, o início da sessão. -->
+  <!-- id=1 is the first chunk of each recording, that is, the start of the session. -->
   <rule id="100501" level="0">
     <if_sid>100500</if_sid>
     <id>^1$</id>
-    <description>Sessão gravada iniciada na máquina $(host)</description>
+    <description>Recorded session started on host $(host)</description>
   </rule>
 </group>

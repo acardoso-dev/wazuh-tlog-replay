@@ -1,5 +1,7 @@
 # Como contribuir
 
+[English](docs/en/contributing.md)
+
 Obrigado pelo interesse. Issues e pull requests podem ser escritos em português ou inglês.
 
 ## Antes de começar
@@ -41,8 +43,9 @@ A pasta [test-env/](test-env/) tem uma máquina Ubuntu de teste, com `systemd` e
 ## Pull requests
 
 - Adicione ou ajuste testes para a mudança, e rode `npm test`.
-- Atualize a documentação e o [histórico de mudanças](CHANGELOG.md).
-- Confira a tela no ambiente simulado, em larguras de 1280 e 375 px, se ela mudou. Atualize as imagens com `npm run screenshots`.
+- Atualize a documentação, nos dois idiomas, e o [histórico de mudanças](CHANGELOG.md).
+- Coloque textos novos da interface nos dois catálogos de `src/lib/messages/`, com IDs estáveis. Não monte mensagens com pedaços. Mensagens do script não podem ter apóstrofo, porque ficam entre aspas simples no shell.
+- Confira a tela no ambiente simulado, em larguras de 1280 e 375 px e nos dois idiomas, se ela mudou. Atualize as imagens com `npm run screenshots`.
 - Evite alterar `src/public/index.js`. Navegadores guardam esse arquivo por até um ano. Veja a [arquitetura](docs/arquitetura.md#carregador-e-atualização-sem-limpar-o-cache).
 - Trate host, usuário e comandos como dados não confiáveis, porque vêm das máquinas gravadas. Não use `innerHTML`.
 - Não envie gravações reais, senhas, certificados privados ou nomes internos. Use só dados fictícios em `samples/` e nos testes.

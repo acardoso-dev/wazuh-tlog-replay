@@ -1,5 +1,7 @@
 # Situação dos testes
 
+[English](en/testing.md)
+
 Esta tabela diz o que já foi verificado e o que ainda não foi. Use-a para decidir o que validar antes de instalar em produção.
 
 Testes feitos em contêineres, na plataforma Wazuh 4.14.9 single-node (OpenSearch Dashboards 2.19.6), com tlog 14, SSSD 2.13 e Fluent Bit 5.1, em arm64.
@@ -20,6 +22,7 @@ Testes feitos em contêineres, na plataforma Wazuh 4.14.9 single-node (OpenSearc
 | Aba Instalar e script gerado | Script testado em Kali arm64 em contêiner com `systemd`, com Wazuh agent sem manager, incluindo senha errada, segunda execução e sessão real chegando ao índice. Tela testada no harness, em 1280 e 375 px. **Não testado** em VM real nem em Ubuntu/Debian |
 | Gravar todos os usuários (`tlog-record-all`) | Testado em Kali arm64 em contêiner: recusas de segurança, `useradd`, `adduser`, troca de shell, reinício, `ssh` com e sem terminal, sessão chegando ao índice e reversão. **Não testado** em VM real nem com LDAP/AD |
 | Correções de segurança da 0.8.2 e 0.8.3 | Rotas, ataques reais e papel mínimo de escrita testados em uma instalação Wazuh real; script completo testado no Ubuntu 24.04 do laboratório. Telas testadas no harness. Detalhes em [analise-de-seguranca.md](analise-de-seguranca.md) |
+| Troca de idioma (0.9.0) | Telas e troca nos dois idiomas testadas no harness. Instalado em uma instalação Wazuh real, onde as rotas responderam conforme o cabeçalho, com inglês para valores desconhecidos ou ausentes. Script gerado conferido com `bash -n` nos dois idiomas. **Não testados:** o seletor na tela do dashboard real e a execução do script em inglês em uma máquina |
 | Multi-tenancy com as configurações | **Não testado** |
 | Formatos de prompt de zsh e macOS | Testados com zsh e bash reais do macOS, em um terminal capturado sem o tlog; **não testados** em uma gravação real |
 | `auditd` | Não funciona neste contêiner e **não foi testado** de ponta a ponta |
@@ -32,4 +35,4 @@ Testes feitos em contêineres, na plataforma Wazuh 4.14.9 single-node (OpenSearc
 | Volume alto, muitas sessões simultâneas e semanas de uso | **Não testados** |
 | Máquina física ou virtual, e arquitetura amd64 | **Não testadas** |
 
-A versão 0.8.4 só mudou textos, o logo do cabeçalho e os avisos de licença do pacote. A rotina de testes automatizados está em [CONTRIBUTING.md](../CONTRIBUTING.md).
+A rotina de testes automatizados está em [CONTRIBUTING.md](../CONTRIBUTING.md).

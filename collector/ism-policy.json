@@ -1,6 +1,6 @@
 {
   "policy": {
-    "description": "Apaga as gravações de sessão depois do prazo de retenção.",
+    "description": "Deletes session recordings after the retention period.",
     "default_state": "retido",
     "states": [
       {

@@ -2,8 +2,10 @@
   <img src="assets/brand/banner.png" alt="Session Replay: gravação e replay de sessões de terminal Linux" width="100%">
 </p>
 
+<p align="center"><a href="README.en.md">English</a> · <strong>Português (Brasil)</strong></p>
+
 <p align="center">
-  <img src="https://img.shields.io/badge/vers%C3%A3o-0.8.4-1CC8A5" alt="Versão 0.8.4">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-0.9.0-1CC8A5" alt="Versão 0.9.0">
   <img src="https://img.shields.io/badge/licen%C3%A7a-Apache--2.0-10202B" alt="Licença Apache-2.0">
   <img src="https://img.shields.io/badge/OpenSearch%20Dashboards-2.19.6-FFB020" alt="OpenSearch Dashboards 2.19.6">
   <img src="https://img.shields.io/badge/estado-beta-A9BDC4" alt="Estado: beta">
@@ -11,7 +13,7 @@
 
 **Session Replay** é um plugin de código aberto para o Wazuh dashboard. Ele mostra, no mesmo painel dos alertas, o que aconteceu em cada sessão de terminal das suas máquinas Linux, e permite assistir a cada uma como um vídeo.
 
-> *In English:* Session Replay is an open source plugin for the Wazuh dashboard that lists and replays Linux terminal sessions recorded with [tlog](https://github.com/Scribery/tlog), next to the related security alerts. The interface and the documentation are in Brazilian Portuguese for now.
+> **English:** the plugin interface is available in English and Portuguese, and the full documentation is in [README.en.md](README.en.md).
 
 ## Para que serve
 
@@ -49,6 +51,7 @@ As imagens vêm do ambiente simulado do projeto, com dados fictícios. O plugin 
 - **Instalação guiada:** a aba **Instalar** gera um script para Ubuntu, Debian e Kali, sem senhas no conteúdo.
 - **Gravação de todos os usuários:** o comando `tlog-record-all` opcional inclui os usuários novos e preserva contas de emergência.
 - **Limites de disco:** a rotação do log, o limite de taxa e a retenção já vêm configurados.
+- **Inglês e português:** cada usuário escolhe o idioma no cabeçalho do app, e a escolha fica salva no navegador dele.
 
 ## Como funciona
 
@@ -107,7 +110,7 @@ Depois, prepare o índice e as permissões e abra **Session Replay > Instalar** 
 |---|---|
 | [Instalação](docs/instalacao.md) | Compilar, preparar o indexador e instalar o plugin |
 | [Instalação manual](docs/instalacao-manual.md) | Configurar uma máquina sem o script, e os limites de disco |
-| [Guia de uso](docs/uso.md) | Sessões, configurações, diagnóstico e gravação de todos os usuários |
+| [Guia de uso](docs/uso.md) | Sessões, configurações, diagnóstico, idioma e gravação de todos os usuários |
 | [Arquitetura](docs/arquitetura.md) | Fluxo dos dados e organização do código |
 | [Solução de problemas](docs/solucao-de-problemas.md) | Sintomas comuns e como resolver |
 | [Limitações](docs/limitacoes.md) | O que o plugin não vê ou não garante |

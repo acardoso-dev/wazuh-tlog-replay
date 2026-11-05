@@ -1,5 +1,7 @@
 # Solução de problemas
 
+[English](en/troubleshooting.md)
+
 Comece conferindo os serviços e os erros na máquina gravada:
 
 ```bash

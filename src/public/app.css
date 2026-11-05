@@ -9,6 +9,9 @@
 }
 .tlog-title { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .tlog-title img { flex: none; }
+.tlog-language { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; font-weight: 400; }
+.tlog-language select { padding: 4px 6px; font: inherit; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 4px; }
+.tlog-language option { color: #1a1c21; background: #fff; }
 .tlog-app h1 { font-size: 24px; font-weight: 600; margin: 0; }
 .tlog-app h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; overflow-wrap: anywhere; }
 .tlog-agent {

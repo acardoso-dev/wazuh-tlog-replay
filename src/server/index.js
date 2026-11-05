@@ -1,6 +1,8 @@
 'use strict';
 
+const { AsyncLocalStorage } = require('node:async_hooks');
 const path = require('node:path');
+const { FALLBACK_LOCALE, LOCALE_HEADER, normalizeLocale, setLocaleProvider, t } = require('../lib/i18n');
 const { loadAssets, parseAssetFile } = require('../lib/assets');
 const { convert, toCast } = require('../lib/tlog2asciicast');
 const { buildInsights } = require('../lib/insights');
@@ -30,6 +32,20 @@ const {
   fetchAllChunks,
 } = require('../lib/queries');
 
+// O idioma vem de cada requisição. Um validador roda antes do handler e não vê a requisição, então
+// suas mensagens, que a tela não provoca, saem no idioma padrão.
+const requestLocale = new AsyncLocalStorage();
+setLocaleProvider(() => requestLocale.getStore() ?? FALLBACK_LOCALE);
+
+const localized = (router) => {
+  const wrap = (handler) => (context, request, response) =>
+    requestLocale.run(normalizeLocale(request.headers?.[LOCALE_HEADER]) ?? FALLBACK_LOCALE, () => handler(context, request, response));
+  return {
+    get: (config, handler) => router.get(config, wrap(handler)),
+    put: (config, handler) => router.put(config, wrap(handler)),
+  };
+};
+
 // Uma função de validação evita depender de @osd/config-schema em tempo de build.
 const validated = (parse) => (data, result) => {
   try {
@@ -43,9 +59,9 @@ const validated = (parse) => (data, result) => {
 const MAX_ANALYSES = 6;
 const MAX_WAITING = 200;
 
-const failure = (logger, response, error, deniedMessage = 'Sem permissão para ler as gravações de sessão.') => {
+const failure = (logger, response, error, deniedMessage = t('server.denied')) => {
   if (error instanceof LimiterBusyError) {
-    return response.customError({ statusCode: 429, body: { message: 'Muitas gravações em análise agora. Tente de novo em instantes.' } });
+    return response.customError({ statusCode: 429, body: { message: t('server.busy') } });
   }
   const statusCode = error.statusCode || error.meta?.statusCode;
   // Permissão negada no índice chega aqui como 403 e precisa continuar sendo 403.
@@ -55,7 +71,7 @@ const failure = (logger, response, error, deniedMessage = 'Sem permissão para l
   logger.error(`Falha ao consultar gravações: ${error.message}`);
   return response.customError({
     statusCode: 502,
-    body: { message: 'Não foi possível consultar as gravações no indexador.' },
+    body: { message: t('server.queryFailed') },
   });
 };
 
@@ -66,7 +82,7 @@ class TlogReplayServerPlugin {
   }
 
   setup(core) {
-    const router = core.http.createRouter();
+    const router = localized(core.http.createRouter());
     const { logger } = this;
     const assets = loadAssets(path.join(__dirname, '..', 'assets'));
     core.savedObjects.registerType(settingsType);
@@ -99,7 +115,7 @@ class TlogReplayServerPlugin {
           return response.ok({ body: { values, version: version ?? null, canEdit, history: canEdit ? history : [] } });
         } catch (error) {
           logger.error(`Falha ao ler as configurações: ${error.message}`);
-          return response.customError({ statusCode: 502, body: { message: 'Não foi possível ler as configurações.' } });
+          return response.customError({ statusCode: 502, body: { message: t('server.settingsReadFailed') } });
         }
       }
     );
@@ -113,7 +129,7 @@ class TlogReplayServerPlugin {
         const client = context.core.opensearch.client.asCurrentUser;
         const { canEdit, user } = await currentAccount(client);
         if (!canEdit) {
-          return response.customError({ statusCode: 403, body: { message: 'Só administradores podem alterar as configurações.' } });
+          return response.customError({ statusCode: 403, body: { message: t('server.settingsAdminOnly') } });
         }
         try {
           const { values, version, history } = await store.save({ ...request.body, user });
@@ -122,11 +138,11 @@ class TlogReplayServerPlugin {
           if (error instanceof SettingsConflictError) {
             return response.customError({
               statusCode: 409,
-              body: { message: 'Outro administrador alterou as configurações. Recarregue para ver os valores atuais.' },
+              body: { message: t('server.settingsConflict') },
             });
           }
           logger.error(`Falha ao salvar as configurações: ${error.message}`);
-          return response.customError({ statusCode: 502, body: { message: 'Não foi possível salvar as configurações.' } });
+          return response.customError({ statusCode: 502, body: { message: t('server.settingsSaveFailed') } });
         }
       }
     );
@@ -187,7 +203,7 @@ class TlogReplayServerPlugin {
         }
         const content = assets.files.get(name);
         if (!content) {
-          return response.notFound({ body: { message: 'Arquivo não encontrado.' } });
+          return response.notFound({ body: { message: t('server.fileNotFound') } });
         }
         // O nome tem o hash do conteúdo, então a cópia guardada nunca fica desatualizada.
         return response.ok({
@@ -225,7 +241,7 @@ class TlogReplayServerPlugin {
               logger,
               response,
               error,
-              `Sem permissão para identificar o agente: o usuário precisa ler ${INVENTORY_PATTERN}.`
+              t('server.agentDenied', { index: INVENTORY_PATTERN })
             );
           }
           // Sem hostname não há como separar as sessões do agente; nunca mostrar as de outros.
@@ -277,7 +293,7 @@ class TlogReplayServerPlugin {
           return await limit(async () => {
             const { messages, truncated } = await fetchAllChunks(search, rec, MAX_MESSAGES, ACTIVITY_FIELDS);
             if (messages.length === 0) {
-              return response.notFound({ body: { message: 'Gravação não encontrada.' } });
+              return response.notFound({ body: { message: t('server.recordingNotFound') } });
             }
             const insights = await buildInsights({
               rec,
@@ -302,7 +318,7 @@ class TlogReplayServerPlugin {
               },
             });
             if (truncated) {
-              insights.warnings.push('Gravação muito longa: a análise cobre só a parte inicial dela.');
+              insights.warnings.push(t('warning.truncatedAnalysis'));
             }
             return response.ok({ body: insights });
           });
@@ -336,13 +352,13 @@ class TlogReplayServerPlugin {
           return await limit(async () => {
             const { messages, truncated } = await fetchAllChunks(search, rec);
             if (messages.length === 0) {
-              return response.notFound({ body: { message: 'Gravação não encontrada.' } });
+              return response.notFound({ body: { message: t('server.recordingNotFound') } });
             }
 
             const result = convert(messages);
             const warnings = [...result.warnings];
             if (truncated) {
-              warnings.push('Gravação muito longa: só a parte inicial dela foi carregada.');
+              warnings.push(t('warning.truncatedReplay'));
             }
             // Gravações podem conter dados sensíveis: fica registrado quem assistiu a cada uma.
             const { user } = await currentAccount(client);
@@ -377,3 +393,4 @@ class TlogReplayServerPlugin {
 }
 
 exports.plugin = (initializerContext) => new TlogReplayServerPlugin(initializerContext);
+exports.localized = localized;

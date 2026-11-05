@@ -1,5 +1,5 @@
 [Unit]
-Description=Observa novos usuários para o Session Replay
+Description=Watch for new users for Session Replay
 
 [Path]
 PathChanged=/etc/passwd

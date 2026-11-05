@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 const { isoFromSeconds } = require('./safe_time');
 
 const INDEX_PATTERN = 'tlog-*';
@@ -38,7 +39,7 @@ function optionalString(value, name, maxLength) {
     return undefined;
   }
   if (typeof value !== 'string' || value.length > maxLength) {
-    throw new Error(`parâmetro "${name}" inválido`);
+    throw new Error(t('query.badParam', { name }));
   }
   return value;
 }
@@ -49,7 +50,7 @@ function optionalDate(value, name) {
     return undefined;
   }
   if (Number.isNaN(Date.parse(text))) {
-    throw new Error(`parâmetro "${name}" não é uma data válida`);
+    throw new Error(t('query.badDate', { name }));
   }
   return new Date(text).toISOString();
 }
@@ -64,7 +65,7 @@ function parseListParams(query = {}) {
   }
   const agent = optionalString(query.agent, 'agent', 10);
   if (agent !== undefined && !/^\d+$/.test(agent)) {
-    throw new Error('parâmetro "agent" inválido');
+    throw new Error(t('query.badParam', { name: 'agent' }));
   }
   return {
     agent,
@@ -79,7 +80,7 @@ function parseListParams(query = {}) {
 
 function parseRec(rec) {
   if (typeof rec !== 'string' || !REC_PATTERN.test(rec)) {
-    throw new Error('identificador de gravação inválido');
+    throw new Error(t('query.badRec'));
   }
   return rec;
 }
