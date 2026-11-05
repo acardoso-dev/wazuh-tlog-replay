@@ -36,7 +36,7 @@ The policy does not cover third-party plugins or compatibility statements. For q
 | Use `core.getStartServices()` | ✅ | Used in `mount` |
 | A plugin failure does not bring down the dashboard | ✅ | Errors handled, plus [analysis limits](security-analysis.md) |
 | Saved objects declared with `hidden`, `namespaceType` and mappings | ✅ | `tlog-replay-settings` is hidden |
-| Tests along with changes | ✅ | 133 automated tests |
+| Tests along with changes | ✅ | 135 automated tests |
 | No `var`, with `===` and single quotes | ✅ | Checked in the code |
 | Declare dependencies and do not access another plugin's DOM | ❌ | The agent menu and the home card are inserted into the page, because the Wazuh dashboard has no extension point for that. If the screen changes, the items disappear, and the app stays in the sidebar. See the [limitations](limitations.md) |
 | Texts with `i18n.translate` | ⚠️ | Texts are in catalogs, with stable namespaced IDs, no concatenation and in English and Portuguese. They use the plugin's own function because `i18n.locale` is one per server, and the goal is a choice per user. See the [architecture](architecture.md#language) |

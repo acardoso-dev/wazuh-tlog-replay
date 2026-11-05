@@ -99,7 +99,7 @@ sudo -u wazuh-dashboard /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plu
 sudo systemctl restart wazuh-dashboard
 ```
 
-Depois, prepare o índice e as permissões e abra **Session Replay > Instalar** para configurar as máquinas. O passo a passo está no [guia de instalação](docs/instalacao.md).
+Depois, prepare o índice e as permissões e abra **Session Replay > Instalar** para configurar as máquinas. O passo a passo está no [guia de instalação](docs/instalacao.md). Se preferir, um agente como o Codex ou o Claude Code pode [fazer a instalação](docs/instalacao-por-agente.md).
 
 > [!IMPORTANT]
 > Gravar um terminal captura tudo o que aparece nele, inclusive dados sensíveis. Avise os usuários e confira as regras de privacidade que se aplicam a você antes de ativar a gravação.
@@ -109,6 +109,7 @@ Depois, prepare o índice e as permissões e abra **Session Replay > Instalar** 
 | Documento | Conteúdo |
 |---|---|
 | [Instalação](docs/instalacao.md) | Compilar, preparar o indexador e instalar o plugin |
+| [Instalação com um agente](docs/instalacao-por-agente.md) | Instrução para o Codex, o Claude Code e agentes parecidos fazerem a instalação |
 | [Instalação manual](docs/instalacao-manual.md) | Configurar uma máquina sem o script, e os limites de disco |
 | [Guia de uso](docs/uso.md) | Sessões, configurações, diagnóstico, idioma e gravação de todos os usuários |
 | [Arquitetura](docs/arquitetura.md) | Fluxo dos dados e organização do código |

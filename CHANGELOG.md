@@ -4,6 +4,12 @@
 
 O projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/). Enquanto estiver em 0.x, uma versão menor pode trazer mudanças incompatíveis.
 
+## Não lançado
+
+- Instalação com um agente de código, como o Codex ou o Claude Code, em `docs/instalacao-por-agente.md`, com `AGENTS.md` e `CLAUDE.md` na raiz.
+- `npm run install-script` gera o script de instalação pela linha de comando.
+- Papéis de escrita e leitura em `collector/role-tlog-writer.json` e `collector/role-tlog-reader.json`.
+
 ## 0.9.0
 
 - Interface em inglês, com seletor de idioma no cabeçalho do app. A escolha é por usuário e fica salva no navegador. No primeiro uso, o app segue o idioma do navegador, com inglês como padrão.

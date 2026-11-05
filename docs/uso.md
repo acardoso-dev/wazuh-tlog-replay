@@ -73,6 +73,8 @@ O script e os comandos que ele instala usam o idioma escolhido quando o script f
 
 A situação vem dos índices `wazuh-states-inventory-system-*` e `wazuh-states-inventory-packages-*`, com as permissões do usuário logado. Sem acesso aos pacotes, ela aparece como "Não verificado". O inventário é atualizado de tempos em tempos e pode demorar a mostrar uma instalação recente. O formulário é preenchido com o nome e a CA do indexador quando o dashboard os tem como texto; caso contrário, cole a CA.
 
+O mesmo script pode ser gerado sem abrir o dashboard, com `npm run --silent install-script`. Veja a [instalação com um agente](instalacao-por-agente.md#7-configurar-cada-máquina).
+
 ### Gravar todos os usuários
 
 O script instala, desligado, o comando `tlog-record-all`, e o passo 4 da aba traz os comandos:

@@ -16,6 +16,7 @@
   "scripts": {
     "test": "node --test test/",
     "build": "node scripts/build.mjs",
+    "install-script": "node scripts/install-script.mjs",
     "harness": "node scripts/harness.mjs",
     "screenshots": "node scripts/screenshots.mjs"
   },

@@ -1,0 +1,9 @@
+{
+  "description": "Session Replay: lets analysts read session recordings, alerts and the agent inventory.",
+  "index_permissions": [
+    {
+      "index_patterns": ["tlog-*", "wazuh-states-inventory-system-*", "wazuh-alerts-*"],
+      "allowed_actions": ["read"]
+    }
+  ]
+}

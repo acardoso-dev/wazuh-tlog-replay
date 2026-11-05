@@ -36,7 +36,7 @@ A política não trata de plugins de terceiros nem de declarações de compatibi
 | Usar `core.getStartServices()` | ✅ | Usado no `mount` |
 | Uma falha do plugin não derruba o dashboard | ✅ | Erros tratados e [limites de análise](analise-de-seguranca.md) |
 | Saved objects declarados com `hidden`, `namespaceType` e mapeamentos | ✅ | `tlog-replay-settings` é oculto |
-| Testes junto com as mudanças | ✅ | 133 testes automatizados |
+| Testes junto com as mudanças | ✅ | 135 testes automatizados |
 | Sem `var`, com `===` e aspas simples | ✅ | Conferido no código |
 | Declarar dependências e não acessar o DOM de outro plugin | ❌ | O menu do agente e o card da home são inseridos na página, porque o Wazuh dashboard não tem ponto de extensão para isso. Se a tela mudar, os itens somem, e o app continua na sidebar. Veja as [limitações](limitacoes.md) |
 | Textos com `i18n.translate` | ⚠️ | Os textos ficam em catálogos, com IDs estáveis e com prefixo, sem concatenação, em inglês e português. Usam uma função própria porque o `i18n.locale` é um por servidor, e o objetivo é a escolha por usuário. Veja a [arquitetura](arquitetura.md#idioma) |
