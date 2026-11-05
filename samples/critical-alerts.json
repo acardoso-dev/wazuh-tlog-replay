@@ -1,0 +1,322 @@
+[
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcip": "172.19.0.1",
+   "dstuser": "teste"
+  },
+  "rule": {
+   "level": 3,
+   "description": "sshd: authentication success.",
+   "groups": [
+    "syslog",
+    "sshd",
+    "authentication_success"
+   ],
+   "mitre": {
+    "id": [
+     "T1078",
+     "T1021"
+    ]
+   },
+   "id": "5715"
+  },
+  "full_log": "Nov 05 00:06:18 ubuntu-teste sshd[5993]: Accepted password for teste from 172.19.0.1 port 62616 ssh2",
+  "timestamp": "2026-11-05T00:06:19.291+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcuser": "teste",
+   "dstuser": "teste"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session opened.",
+   "groups": [
+    "pam",
+    "syslog",
+    "authentication_success"
+   ],
+   "mitre": {
+    "id": [
+     "T1078"
+    ]
+   },
+   "id": "5501"
+  },
+  "full_log": "Nov 05 00:06:18 ubuntu-teste sshd[5993]: pam_unix(sshd:session): session opened for user teste(uid=1001) by teste(uid=0)",
+  "timestamp": "2026-11-05T00:06:19.335+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcuser": "teste",
+   "dstuser": "root"
+  },
+  "rule": {
+   "level": 3,
+   "description": "Successful sudo to ROOT executed.",
+   "groups": [
+    "syslog",
+    "sudo"
+   ],
+   "mitre": {
+    "id": [
+     "T1548.003"
+    ]
+   },
+   "id": "5402"
+  },
+  "full_log": "Nov 05 00:06:25 ubuntu-teste sudo[6016]:    teste : TTY=pts/4 ; PWD=/home/teste ; USER=root ; COMMAND=/usr/bin/id",
+  "timestamp": "2026-11-05T00:06:25.301+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcuser": "teste",
+   "dstuser": "root"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session opened.",
+   "groups": [
+    "pam",
+    "syslog",
+    "authentication_success"
+   ],
+   "mitre": {
+    "id": [
+     "T1078"
+    ]
+   },
+   "id": "5501"
+  },
+  "full_log": "Nov 05 00:06:25 ubuntu-teste sudo[6016]: pam_unix(sudo:session): session opened for user root(uid=0) by teste(uid=1001)",
+  "timestamp": "2026-11-05T00:06:25.301+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "dstuser": "root"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session closed.",
+   "groups": [
+    "pam",
+    "syslog"
+   ],
+   "id": "5502"
+  },
+  "full_log": "Nov 05 00:06:25 ubuntu-teste sudo[6016]: pam_unix(sudo:session): session closed for user root",
+  "timestamp": "2026-11-05T00:06:25.303+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcuser": "teste",
+   "dstuser": "root"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session opened.",
+   "groups": [
+    "pam",
+    "syslog",
+    "authentication_success"
+   ],
+   "mitre": {
+    "id": [
+     "T1078"
+    ]
+   },
+   "id": "5501"
+  },
+  "full_log": "Nov 05 00:06:26 ubuntu-teste sudo[6019]: pam_unix(sudo:session): session opened for user root(uid=0) by teste(uid=1001)",
+  "timestamp": "2026-11-05T00:06:27.304+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcuser": "teste",
+   "dstuser": "root"
+  },
+  "rule": {
+   "level": 3,
+   "description": "Successful sudo to ROOT executed.",
+   "groups": [
+    "syslog",
+    "sudo"
+   ],
+   "mitre": {
+    "id": [
+     "T1548.003"
+    ]
+   },
+   "id": "5402"
+  },
+  "full_log": "Nov 05 00:06:26 ubuntu-teste sudo[6019]:    teste : TTY=pts/4 ; PWD=/home/teste ; USER=root ; COMMAND=/usr/bin/ls /root",
+  "timestamp": "2026-11-05T00:06:27.304+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "dstuser": "root"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session closed.",
+   "groups": [
+    "pam",
+    "syslog"
+   ],
+   "id": "5502"
+  },
+  "full_log": "Nov 05 00:06:26 ubuntu-teste sudo[6019]: pam_unix(sudo:session): session closed for user root",
+  "timestamp": "2026-11-05T00:06:27.306+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcip": "::1",
+   "dstuser": "teste"
+  },
+  "rule": {
+   "level": 3,
+   "description": "sshd: authentication success.",
+   "groups": [
+    "syslog",
+    "sshd",
+    "authentication_success"
+   ],
+   "mitre": {
+    "id": [
+     "T1078",
+     "T1021"
+    ]
+   },
+   "id": "5715"
+  },
+  "full_log": "Nov 05 00:06:32 ubuntu-teste sshd[6023]: Accepted password for teste from ::1 port 55058 ssh2",
+  "timestamp": "2026-11-05T00:06:33.311+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "srcuser": "teste",
+   "dstuser": "teste"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session opened.",
+   "groups": [
+    "pam",
+    "syslog",
+    "authentication_success"
+   ],
+   "mitre": {
+    "id": [
+     "T1078"
+    ]
+   },
+   "id": "5501"
+  },
+  "full_log": "Nov 05 00:06:32 ubuntu-teste sshd[6023]: pam_unix(sshd:session): session opened for user teste(uid=1001) by teste(uid=0)",
+  "timestamp": "2026-11-05T00:06:33.353+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "dstuser": "teste"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session closed.",
+   "groups": [
+    "pam",
+    "syslog"
+   ],
+   "id": "5502"
+  },
+  "full_log": "Nov 05 00:06:35 ubuntu-teste sshd[6023]: pam_unix(sshd:session): session closed for user teste",
+  "timestamp": "2026-11-05T00:06:35.314+0000"
+ },
+ {
+  "predecoder": {
+   "hostname": "ubuntu-teste"
+  },
+  "agent": {
+   "name": "ubuntu-teste"
+  },
+  "data": {
+   "dstuser": "teste"
+  },
+  "rule": {
+   "level": 3,
+   "description": "PAM: Login session closed.",
+   "groups": [
+    "pam",
+    "syslog"
+   ],
+   "id": "5502"
+  },
+  "full_log": "Nov 05 00:06:42 ubuntu-teste sshd[5993]: pam_unix(sshd:session): session closed for user teste",
+  "timestamp": "2026-11-05T00:06:43.325+0000"
+ }
+]

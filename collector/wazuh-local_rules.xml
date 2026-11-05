@@ -1,0 +1,28 @@
+<!--
+  Adicione ao /var/ossec/etc/rules/local_rules.xml do manager.
+  Ajuste os IDs se já estiverem em uso.
+
+  Valide antes de reiniciar: uma regra inválida impede o analysisd de iniciar.
+  No JSON do tlog, `id` e `user` são campos estáticos do Wazuh. Por isso `id` usa <id>,
+  e não <field name="id">, que é rejeitado.
+
+  O agente não precisa ler o log do tlog. Estas regras protegem as máquinas em que ele já lê:
+  um alerta levaria o texto da sessão para wazuh-alerts-*, onde quem lê alertas o veria mesmo
+  sem acesso a tlog-*. Só suba o nível da regra 100501 aceitando isso.
+-->
+<group name="tlog,session_recording,">
+  <!-- Nível 0: cada pedaço é analisado, mas não vira alerta. As gravações ficam no índice tlog-*. -->
+  <rule id="100500" level="0">
+    <decoded_as>json</decoded_as>
+    <field name="rec">\.+</field>
+    <field name="timing">\.+</field>
+    <description>Pedaço de gravação de sessão tlog</description>
+  </rule>
+
+  <!-- id=1 é o primeiro pedaço de cada gravação, ou seja, o início da sessão. -->
+  <rule id="100501" level="0">
+    <if_sid>100500</if_sid>
+    <id>^1$</id>
+    <description>Sessão gravada iniciada na máquina $(host)</description>
+  </rule>
+</group>

@@ -1,0 +1,26 @@
+{
+  "name": "tlog-session-replay",
+  "version": "0.8.4",
+  "private": true,
+  "description": "Plugin de replay de sessões de terminal gravadas pelo tlog, para o Wazuh dashboard",
+  "license": "Apache-2.0",
+  "author": "acardoso-dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acardoso-dev/wazuh-tlog-replay.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acardoso-dev/wazuh-tlog-replay/issues"
+  },
+  "homepage": "https://github.com/acardoso-dev/wazuh-tlog-replay#readme",
+  "scripts": {
+    "test": "node --test test/",
+    "build": "node scripts/build.mjs",
+    "harness": "node scripts/harness.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
+  },
+  "devDependencies": {
+    "asciinema-player": "3.17.0",
+    "esbuild": "^0.25.0"
+  }
+}

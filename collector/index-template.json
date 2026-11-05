@@ -1,0 +1,27 @@
+{
+  "index_patterns": ["tlog-*"],
+  "priority": 200,
+  "template": {
+    "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "ver": { "type": "keyword" },
+        "host": { "type": "keyword" },
+        "rec": { "type": "keyword" },
+        "user": { "type": "keyword" },
+        "term": { "type": "keyword" },
+        "session": { "type": "long" },
+        "id": { "type": "long" },
+        "pos": { "type": "long" },
+        "time": { "type": "double" },
+        "timing": { "type": "keyword", "index": false, "doc_values": false },
+        "out_txt": { "type": "text" },
+        "out_bin": { "type": "short", "index": false, "doc_values": false },
+        "in_txt": { "type": "text", "index": false },
+        "in_bin": { "type": "short", "index": false, "doc_values": false }
+      }
+    }
+  }
+}

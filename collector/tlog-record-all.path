@@ -1,0 +1,9 @@
+[Unit]
+Description=Observa novos usuários para o Session Replay
+
+[Path]
+PathChanged=/etc/passwd
+Unit=tlog-record-all.service
+
+[Install]
+WantedBy=multi-user.target

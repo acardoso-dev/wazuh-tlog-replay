@@ -1,0 +1,13 @@
+[Unit]
+Description=Ativa a gravação do Session Replay nos usuários locais
+# Sem isto, várias trocas de shell em sequência fariam o systemd parar de atender a unidade.
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+# Dá tempo de o adduser terminar antes de mexer no mesmo usuário.
+ExecStartPre=/bin/sleep 2
+ExecStart=/usr/local/sbin/tlog-record-all sync
+
+[Install]
+WantedBy=multi-user.target

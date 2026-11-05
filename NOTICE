@@ -1,0 +1,15 @@
+Session Replay
+Copyright 2026 acardoso-dev and contributors
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+
+This is an independent community project. It is not affiliated with, sponsored
+by, or endorsed by Wazuh, Inc. WAZUH is a trademark of Wazuh, Inc. OpenSearch
+is a trademark of LF Projects, LLC. Those names are used only to identify the
+software this plugin is compatible with.
+
+Third-party components:
+- asciinema-player and the libraries bundled with it. Their licenses are
+  reproduced in THIRD-PARTY-NOTICES.txt, inside the plugin package.
+- The videoPlayer icon comes from OUI (https://github.com/opensearch-project/oui),
+  under the Apache License, Version 2.0.

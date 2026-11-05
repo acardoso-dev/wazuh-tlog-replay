@@ -1,0 +1,5 @@
+<!-- Opcional e não recomendado: envia o conteúdo das sessões ao manager. Veja "Dados nos alertas" em docs/limitacoes.md. -->
+<localfile>
+  <log_format>json</log_format>
+  <location>/var/log/tlog/tlog.log</location>
+</localfile>

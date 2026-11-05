@@ -1,0 +1,7 @@
+# /etc/systemd/system/tlog-logrotate.service
+[Unit]
+Description=Rotação do log de sessões do tlog
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/logrotate --state /var/lib/logrotate/tlog.status /etc/tlog/logrotate.conf

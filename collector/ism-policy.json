@@ -1,0 +1,21 @@
+{
+  "policy": {
+    "description": "Apaga as gravações de sessão depois do prazo de retenção.",
+    "default_state": "retido",
+    "states": [
+      {
+        "name": "retido",
+        "actions": [],
+        "transitions": [
+          { "state_name": "apagar", "conditions": { "min_index_age": "90d" } }
+        ]
+      },
+      {
+        "name": "apagar",
+        "actions": [{ "delete": {} }],
+        "transitions": []
+      }
+    ],
+    "ism_template": [{ "index_patterns": ["tlog-*"], "priority": 200 }]
+  }
+}
