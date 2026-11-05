@@ -1,0 +1,15 @@
+{
+  "description": "Session Replay: lets Fluent Bit write session recordings, without deleting or reading them.",
+  "cluster_permissions": ["indices:data/write/bulk"],
+  "index_permissions": [
+    {
+      "index_patterns": ["tlog-*"],
+      "allowed_actions": [
+        "indices:admin/create",
+        "indices:admin/mapping/put",
+        "indices:data/write/bulk*",
+        "indices:data/write/index"
+      ]
+    }
+  ]
+}

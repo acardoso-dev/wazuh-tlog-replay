@@ -97,7 +97,7 @@ sudo -u wazuh-dashboard /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plu
 sudo systemctl restart wazuh-dashboard
 ```
 
-Then prepare the index and the permissions, and open **Session Replay > Install** to set up the hosts. The step-by-step instructions are in the [installation guide](docs/en/installation.md).
+Then prepare the index and the permissions, and open **Session Replay > Install** to set up the hosts. The step-by-step instructions are in the [installation guide](docs/en/installation.md). If you prefer, an agent such as Codex or Claude Code can [do the installation](docs/en/agent-installation.md).
 
 > [!IMPORTANT]
 > Recording a terminal captures everything that appears in it, including sensitive data. Tell your users, and check the privacy rules that apply to you before you enable recording.
@@ -107,6 +107,7 @@ Then prepare the index and the permissions, and open **Session Replay > Install*
 | Document | Content |
 |---|---|
 | [Installation](docs/en/installation.md) | Build, prepare the indexer and install the plugin |
+| [Installation with an agent](docs/en/agent-installation.md) | Instructions for Codex, Claude Code and similar agents to do the installation |
 | [Manual installation](docs/en/manual-installation.md) | Set up a host without the script, and the disk limits |
 | [Usage guide](docs/en/usage.md) | Sessions, settings, diagnostics, language and recording all users |
 | [Architecture](docs/en/architecture.md) | Data flow and code layout |

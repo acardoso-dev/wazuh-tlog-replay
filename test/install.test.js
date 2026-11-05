@@ -126,3 +126,26 @@ test('os padrões vêm da configuração do dashboard, sem expor o resto dela', 
   assert.equal(defaults.indexerName, 'wazuh.indexer');
   assert.equal(defaults.caPem, caPem);
 });
+
+test('o gerador de linha de comando produz um script válido', () => {
+  const root = join(__dirname, '..');
+  const script = execFileSync(process.execPath, [
+    join(root, 'scripts/install-script.mjs'),
+    '--indexer-name=wazuh.indexer',
+    '--writer-user=tlog_writer',
+    `--ca=${join(__dirname, 'fixtures-ca.pem')}`,
+  ], { encoding: 'utf8' });
+  assert.match(script, /installs tlog and Fluent Bit/);
+  execFileSync('bash', ['-n'], { input: script });
+  assert.throws(() => execFileSync(process.execPath, [join(root, 'scripts/install-script.mjs'), '--indexer-name=a;b', '--writer-user=x', `--ca=${join(__dirname, 'fixtures-ca.pem')}`], { stdio: 'pipe' }));
+});
+
+test('o papel de escrita não permite apagar, e o de leitura só lê', () => {
+  const role = (name) => JSON.parse(readFileSync(join(__dirname, '..', 'collector', name), 'utf8'));
+  const writer = role('role-tlog-writer.json');
+  assert.deepEqual(writer.index_permissions[0].index_patterns, ['tlog-*']);
+  for (const action of writer.index_permissions[0].allowed_actions) {
+    assert.ok(!/delete|update|\/\*$/.test(action), action);
+  }
+  assert.deepEqual(role('role-tlog-reader.json').index_permissions[0].allowed_actions, ['read']);
+});

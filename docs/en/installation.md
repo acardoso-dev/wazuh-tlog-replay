@@ -2,7 +2,7 @@
 
 [Português](../instalacao.md)
 
-There are three parts: prepare the server, install the plugin on the dashboard and set up each host to be recorded.
+There are three parts: prepare the server, install the plugin on the dashboard and set up each host to be recorded. An agent such as Codex or Claude Code can do this by following the [installation with an agent](agent-installation.md).
 
 ## Requirements
 
@@ -32,7 +32,7 @@ Apply the template on the Wazuh indexer. The command asks for the password; use 
 curl -u admin --cacert root-ca.pem -X PUT "https://INDEXER:9200/_index_template/tlog" -H 'Content-Type: application/json' -d @collector/index-template.json
 ```
 
-Also create two roles in the indexer security module:
+Also create two roles in the indexer security module. The [collector/role-tlog-writer.json](../../collector/role-tlog-writer.json) and [collector/role-tlog-reader.json](../../collector/role-tlog-reader.json) files have these permissions:
 - **Write (Fluent Bit):** the cluster permission `indices:data/write/bulk`, plus `indices:admin/create`, `indices:admin/mapping/put`, `indices:data/write/bulk*` and `indices:data/write/index` on `tlog-*`. Do not use `indices:data/write/*`: it allows deleting recordings, and this user's password is stored on every host.
 - **Read (analysts):** `read` on `tlog-*`, `wazuh-states-inventory-system-*` and `wazuh-alerts-*`, plus the `kibana_user` role to log in to the dashboard. The plugin queries the indices with the permissions of the logged-in user. The inventory is needed to open sessions from an agent. Without `wazuh-alerts-*`, the list still works, but it only shows what is in the capture and displays **Alerts unavailable**.
 

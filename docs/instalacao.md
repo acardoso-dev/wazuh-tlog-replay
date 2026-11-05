@@ -2,7 +2,7 @@
 
 [English](en/installation.md)
 
-São três partes: preparar o servidor, instalar o plugin no dashboard e configurar cada máquina que será gravada.
+São três partes: preparar o servidor, instalar o plugin no dashboard e configurar cada máquina que será gravada. Um agente como o Codex ou o Claude Code pode fazer isso seguindo a [instalação com um agente](instalacao-por-agente.md).
 
 ## Requisitos
 
@@ -32,7 +32,7 @@ Aplique o modelo no Wazuh indexer. O comando pede a senha; use um usuário com p
 curl -u admin --cacert root-ca.pem -X PUT "https://INDEXER:9200/_index_template/tlog" -H 'Content-Type: application/json' -d @collector/index-template.json
 ```
 
-Crie também dois papéis no módulo de segurança do indexador:
+Crie também dois papéis no módulo de segurança do indexador. Os arquivos [collector/role-tlog-writer.json](../collector/role-tlog-writer.json) e [collector/role-tlog-reader.json](../collector/role-tlog-reader.json) trazem essas permissões:
 - **Escrita (Fluent Bit):** a permissão de cluster `indices:data/write/bulk`, mais `indices:admin/create`, `indices:admin/mapping/put`, `indices:data/write/bulk*` e `indices:data/write/index` em `tlog-*`. Não use `indices:data/write/*`: ele permite apagar gravações, e a senha deste usuário fica em todas as máquinas.
 - **Leitura (analistas):** `read` em `tlog-*`, em `wazuh-states-inventory-system-*` e em `wazuh-alerts-*`, somado ao papel `kibana_user` para entrar no dashboard. O plugin consulta os índices com as permissões do usuário logado. O inventário é necessário para abrir as sessões a partir de um agente. Sem `wazuh-alerts-*`, a lista continua funcionando, mas só mostra o que está na captura e exibe **Alertas indisponíveis**.
 

@@ -73,6 +73,8 @@ The script and the commands it installs use the language selected when the scrip
 
 The status comes from the `wazuh-states-inventory-system-*` and `wazuh-states-inventory-packages-*` indices, with the permissions of the logged-in user. Without access to the packages, it appears as "Not verified". The inventory is updated periodically and can take a while to show a recent installation. The form is filled with the indexer name and CA when the dashboard has them as text; otherwise, paste the CA.
 
+The same script can be generated without opening the dashboard, with `npm run --silent install-script`. See the [installation with an agent](agent-installation.md#7-set-up-each-host).
+
 ### Record all users
 
 The script installs the `tlog-record-all` command, turned off, and step 4 of the tab has the commands:
