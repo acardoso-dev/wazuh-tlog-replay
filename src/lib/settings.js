@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 const { KINDS, PROMPT_FORMATS } = require('./session_events');
 
 const MAX_EXTRA = 50;
@@ -8,28 +9,28 @@ const MAX_EXTRA_LENGTH = 80;
 const EXTRA_COMMAND = /^[\w./:+-]+( [\w./:+-]+)*$/;
 
 const integer = (min, max) => (value) =>
-  Number.isInteger(value) && value >= min && value <= max ? null : `Use um número inteiro de ${min} a ${max}.`;
+  Number.isInteger(value) && value >= min && value <= max ? null : t('validation.integer', { min, max });
 
 const subsetOf = (options, { required = false } = {}) => (value) => {
-  if (!Array.isArray(value) || value.some((item) => !options.includes(item))) return 'Opção desconhecida.';
-  return required && value.length === 0 ? 'Escolha pelo menos uma opção.' : null;
+  if (!Array.isArray(value) || value.some((item) => !options.includes(item))) return t('validation.unknownOption');
+  return required && value.length === 0 ? t('validation.chooseOne') : null;
 };
 
 function extraCommands(value) {
-  if (!Array.isArray(value) || value.some((line) => typeof line !== 'string')) return 'Informe uma lista de comandos.';
-  if (value.length > MAX_EXTRA) return `Use no máximo ${MAX_EXTRA} comandos.`;
+  if (!Array.isArray(value) || value.some((line) => typeof line !== 'string')) return t('validation.commandList');
+  if (value.length > MAX_EXTRA) return t('validation.tooManyCommands', { max: MAX_EXTRA });
   const bad = value.find((line) => line.length > MAX_EXTRA_LENGTH || !EXTRA_COMMAND.test(line));
-  return bad === undefined ? null : `"${bad}" não é válido: use só o comando e seus argumentos fixos, sem expressão regular.`;
+  return bad === undefined ? null : t('validation.badCommand', { command: bad });
 }
 
 const kindIds = KINDS.map(({ id }) => id);
 const promptIds = PROMPT_FORMATS.map(({ id }) => id);
 
 const GROUPS = [
-  { id: 'detect', title: 'Detecção', help: 'Vale também para gravações antigas, porque a detecção roda na leitura.' },
-  { id: 'alerts', title: 'Alertas do Wazuh', help: '' },
-  { id: 'timeline', title: 'Timeline', help: '' },
-  { id: 'player', title: 'Player', help: '' },
+  { id: 'detect', get title() { return t('settings.group.detect'); }, get help() { return t('settings.group.detectHelp'); } },
+  { id: 'alerts', get title() { return t('settings.group.alerts'); }, help: '' },
+  { id: 'timeline', get title() { return t('settings.group.timeline'); }, help: '' },
+  { id: 'player', get title() { return t('settings.group.player'); }, help: '' },
 ];
 
 /** Uma entrada por ajuste: a tela é montada daqui, e a validação é a mesma no navegador e no servidor. */
@@ -38,20 +39,20 @@ const SETTINGS = [
     id: 'kinds',
     group: 'detect',
     type: 'multi',
-    label: 'Tipos reconhecidos',
-    help: 'Desligar um tipo o remove dos pontos, chips e filtros.',
-    options: KINDS.map(({ id, label, hint }) => ({ id, label, hint })),
+    get label() { return t('settings.kinds.label'); },
+    get help() { return t('settings.kinds.help'); },
+    get options() { return KINDS.map(({ id, label, hint }) => ({ id, label, hint })); },
     def: kindIds,
     validate: subsetOf(kindIds),
     warn: (value) =>
-      value.length < kindIds.length ? 'Com um tipo desligado, esses comandos deixam de aparecer para todos os usuários.' : '',
+      value.length < kindIds.length ? t('settings.kinds.warning') : '',
   },
   {
     id: 'extra',
     group: 'detect',
     type: 'lines',
-    label: 'Comandos críticos extras',
-    help: 'Um por linha. Entram como Destrutivo e também valem com sudo na frente.',
+    get label() { return t('settings.extra.label'); },
+    get help() { return t('settings.extra.help'); },
     placeholder: 'kubectl delete\nterraform destroy',
     def: [],
     validate: extraCommands,
@@ -60,9 +61,9 @@ const SETTINGS = [
     id: 'prompts',
     group: 'detect',
     type: 'multi',
-    label: 'Formatos de prompt',
-    help: 'A detecção só lê linhas com um destes prompts. Comandos em outros formatos não são vistos.',
-    options: PROMPT_FORMATS.map(({ id, label, hint }) => ({ id, label, hint, mono: true })),
+    get label() { return t('settings.prompts.label'); },
+    get help() { return t('settings.prompts.help'); },
+    get options() { return PROMPT_FORMATS.map(({ id, label, hint }) => ({ id, label, hint, mono: true })); },
     def: ['debian', 'rhel'],
     validate: subsetOf(promptIds, { required: true }),
   },
@@ -70,17 +71,17 @@ const SETTINGS = [
     id: 'alertsEnabled',
     group: 'alerts',
     type: 'toggle',
-    label: 'Ligar comandos aos alertas',
-    help: 'Desligado, as sessões mostram só o que está na captura, e o plugin não consulta os alertas. O fim da sessão passa a ser a última saída gravada.',
+    get label() { return t('settings.alertsEnabled.label'); },
+    get help() { return t('settings.alertsEnabled.help'); },
     def: true,
-    validate: (value) => (typeof value === 'boolean' ? null : 'Valor inválido.'),
+    validate: (value) => (typeof value === 'boolean' ? null : t('validation.invalidValue')),
   },
   {
     id: 'idleSeconds',
     group: 'timeline',
     type: 'number',
-    label: 'Tempo para considerar ociosa',
-    help: 'Pausa sem dados gravados que aparece como ociosa na timeline.',
+    get label() { return t('settings.idleSeconds.label'); },
+    get help() { return t('settings.idleSeconds.help'); },
     unit: 's',
     def: 30,
     validate: integer(5, 3600),
@@ -89,8 +90,8 @@ const SETTINGS = [
     id: 'pauseSeconds',
     group: 'player',
     type: 'number',
-    label: 'Pausa máxima no replay',
-    help: 'Pausas maiores são encurtadas para este valor. O salto pelos horários continua certo.',
+    get label() { return t('settings.pauseSeconds.label'); },
+    get help() { return t('settings.pauseSeconds.help'); },
     unit: 's',
     def: 2,
     validate: integer(1, 60),
@@ -116,13 +117,13 @@ function validateSettings(values) {
 function parseSettingsBody(body) {
   const known = new Set(SETTINGS.map(({ id }) => id));
   const values = body?.values;
-  if (typeof values !== 'object' || values === null || Array.isArray(values)) throw new Error('Configurações inválidas.');
+  if (typeof values !== 'object' || values === null || Array.isArray(values)) throw new Error(t('validation.invalidSettings'));
   const unknown = Object.keys(values).find((key) => !known.has(key));
-  if (unknown) throw new Error('Configuração desconhecida.');
+  if (unknown) throw new Error(t('validation.unknownSetting'));
   const errors = Object.values(validateSettings(values));
   if (errors.length > 0) throw new Error(errors.join(' '));
   if (body.version !== undefined && (typeof body.version !== 'string' || body.version.length > 200)) {
-    throw new Error('Versão inválida.');
+    throw new Error(t('validation.invalidVersion'));
   }
   const clean = Object.fromEntries(SETTINGS.map(({ id }) => [id, values[id]]));
   clean.extra = [...new Set(clean.extra)];
@@ -144,13 +145,13 @@ function mergeStored(stored) {
 function displayValue(id, value) {
   const setting = SETTINGS.find((item) => item.id === id);
   if (!setting) return String(value);
-  if (setting.type === 'toggle') return value ? 'Ligado' : 'Desligado';
+  if (setting.type === 'toggle') return value ? t('settings.value.on') : t('settings.value.off');
   if (setting.type === 'multi') {
     const names = setting.options.filter((option) => value.includes(option.id)).map((option) => option.label);
-    return names.length > 0 ? names.join(', ') : 'nenhum';
+    return names.length > 0 ? names.join(', ') : t('settings.value.none');
   }
-  if (setting.type === 'lines') return value.length > 0 ? value.join(', ') : 'nenhum';
-  return Number.isNaN(value) ? 'vazio' : `${value}${setting.unit ? ` ${setting.unit}` : ''}`;
+  if (setting.type === 'lines') return value.length > 0 ? value.join(', ') : t('settings.value.none');
+  return Number.isNaN(value) ? t('settings.value.empty') : `${value}${setting.unit ? ` ${setting.unit}` : ''}`;
 }
 
 module.exports = {

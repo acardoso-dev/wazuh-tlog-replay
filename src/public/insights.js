@@ -1,17 +1,9 @@
+import { t } from '../lib/i18n';
 import { h, formatDuration, formatTime } from './dom';
 
-const EVIDENCE = {
-  both: ['Captura + Wazuh', 'O comando aparece na gravação e o Wazuh gerou um alerta para ele.'],
-  capture: ['Só na captura', 'O comando aparece na gravação, mas não há alerta do Wazuh ligado a ele.'],
-  wazuh: ['Só no Wazuh', 'O Wazuh gerou o alerta, mas o comando não foi reconhecido na gravação.'],
-};
-const KINDS = [
-  ['destructive', 'Destrutivo'],
-  ['pipe', 'Pipe para shell'],
-  ['sudo', 'sudo'],
-  ['su', 'su'],
-  ['ssh', 'SSH'],
-];
+const evidenceText = (id) => [t(`evidence.${id}.label`), t(`evidence.${id}.help`)];
+const KINDS = ['destructive', 'pipe', 'sudo', 'su', 'ssh'];
+const kindName = (kind) => t(`kind.${kind}`);
 
 /** Ponto final real da sessão: o alerta de encerramento, quando existe, ou a última saída. */
 export const sessionEnd = (insights) => Math.max(insights.closedAtMs ?? 0, insights.durationMs);
@@ -69,13 +61,13 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
   const bar = h('div', {
     className: 'tlog-timeline-bar tlog-timeline-bar--pins',
     role: 'img',
-    'aria-label': `Início às ${at(0)}. Fim às ${at(end)}. Ativa por ${formatDuration(activeMs / 1000)}, ociosa por ${formatDuration(idleMs / 1000)}. ${events.length} evento(s) crítico(s).`,
+    'aria-label': t('timeline.aria', { start: at(0), end: at(end), active: formatDuration(activeMs / 1000), idle: formatDuration(idleMs / 1000), count: events.length }),
   });
   for (const part of timelineParts({ segments }, end)) {
-    const name = part.kind === 'active' ? 'Atividade' : 'Ocioso';
+    const name = part.kind === 'active' ? t('timeline.activity') : t('timeline.idle');
     const element = h('span', {
       className: `tlog-timeline-${part.kind}`,
-      title: `${name}: ${at(part.start)} até ${at(part.end)} (${formatDuration((part.end - part.start) / 1000)})`,
+      title: t('timeline.part', { name, start: at(part.start), end: at(part.end), duration: formatDuration((part.end - part.start) / 1000) }),
     });
     element.style.left = `${percent(part.start)}%`;
     element.style.width = end > 0 ? `${((part.end - part.start) / end) * 100}%` : '100%';
@@ -83,10 +75,10 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
   }
   const closedKnown = insights.closedAtMs !== null && insights.closedAtMs >= insights.durationMs;
   bar.append(
-    h('span', { className: 'tlog-timeline-mark tlog-timeline-start', title: `Início: ${at(0)}` }),
+    h('span', { className: 'tlog-timeline-mark tlog-timeline-start', title: t('timeline.start', { time: at(0) }) }),
     h('span', {
       className: 'tlog-timeline-mark tlog-timeline-end',
-      title: `${closedKnown ? 'Encerrada, segundo o Wazuh' : 'Última saída gravada'}: ${at(end)}`,
+      title: `${closedKnown ? t('timeline.closedByAlert') : t('timeline.lastOutput')}: ${at(end)}`,
     })
   );
 
@@ -96,17 +88,17 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
       {
         type: 'button',
         className: 'tlog-time-link',
-        title: 'Abrir o replay neste momento',
-        'aria-label': `Abrir o replay em ${label}`,
+        title: t('timeline.openHere'),
+        'aria-label': t('timeline.openAt', { time: label }),
         onClick: () => openAt({ ...moment, label }),
       },
       label
     );
 
   const eventBalloon = (event) => [
-    h('strong', {}, `${event.label} às ${at(event.t)}${event.failed ? ' (negado)' : ''}`),
+    h('strong', {}, `${t('event.at', { kind: kindName(event.kind), time: at(event.t) })}${event.failed ? ` ${t('event.deniedSuffix')}` : ''}`),
     h('code', {}, event.command),
-    h('div', {}, `${EVIDENCE[event.evidence][0]}${event.rule ? ` · regra ${event.rule.id}` : ''}`),
+    h('div', {}, `${evidenceText(event.evidence)[0]}${event.rule ? ` · ${t('event.ruleLower', { id: event.rule.id })}` : ''}`),
   ];
 
   const pins = [];
@@ -114,32 +106,32 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
     h(
       'tr',
       {},
-      h('td', { 'data-label': 'Hora' }, timeLink(at(event.t), { kind: 'event', index })),
-      h('td', { 'data-label': 'Tipo' }, h('span', { className: `tlog-chip tlog-kind-${event.kind}` }, event.label)),
+      h('td', { 'data-label': t('details.time') }, timeLink(at(event.t), { kind: 'event', index })),
+      h('td', { 'data-label': t('details.type') }, h('span', { className: `tlog-chip tlog-kind-${event.kind}` }, kindName(event.kind))),
       h(
         'td',
-        { 'data-label': 'Comando' },
+        { 'data-label': t('details.command') },
         h('code', {}, event.command),
-        event.alternate ? h('div', { className: 'tlog-quiet' }, 'Visto em tela alternativa: pode ser só texto exibido por um programa, como o less.') : null,
-        event.childStartedAt ? h('div', { className: 'tlog-quiet' }, `Abriu uma sessão nesta máquina às ${formatTime(event.childStartedAt)}`) : null
+        event.alternate ? h('div', { className: 'tlog-quiet' }, t('details.alternateScreen')) : null,
+        event.childStartedAt ? h('div', { className: 'tlog-quiet' }, t('event.openedSession', { time: formatTime(event.childStartedAt) })) : null
       ),
       h(
         'td',
-        { 'data-label': 'Evidência' },
-        h('span', { className: `tlog-evidence tlog-evidence-${event.evidence}`, title: EVIDENCE[event.evidence][1] }, EVIDENCE[event.evidence][0]),
-        event.failed ? h('span', { className: 'tlog-evidence tlog-evidence-failed' }, 'Negado') : null
+        { 'data-label': t('details.evidence') },
+        h('span', { className: `tlog-evidence tlog-evidence-${event.evidence}`, title: evidenceText(event.evidence)[1] }, evidenceText(event.evidence)[0]),
+        event.failed ? h('span', { className: 'tlog-evidence tlog-evidence-failed' }, t('details.denied')) : null
       ),
       h(
         'td',
-        { 'data-label': 'Alerta do Wazuh' },
+        { 'data-label': t('details.alert') },
         event.rule
           ? h(
               'div',
               {},
-              h('div', { className: 'tlog-nowrap' }, `Regra ${event.rule.id} · nível ${event.rule.level}${event.rule.mitre.length ? ` · ${event.rule.mitre.join(', ')}` : ''}`),
+              h('div', { className: 'tlog-nowrap' }, `${t('event.rule', { id: event.rule.id, level: event.rule.level })}${event.rule.mitre.length ? ` · ${event.rule.mitre.join(', ')}` : ''}`),
               h('div', { className: 'tlog-quiet' }, event.rule.description)
             )
-          : h('span', { className: 'tlog-quiet' }, 'Sem alerta')
+          : h('span', { className: 'tlog-quiet' }, t('details.noAlert'))
       )
     )
   );
@@ -149,7 +141,7 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
     h(
       'table',
       { className: 'tlog-details' },
-      h('thead', {}, h('tr', {}, ...['Hora', 'Tipo', 'Comando', 'Evidência', 'Alerta do Wazuh'].map((title) => h('th', { scope: 'col' }, title)))),
+      h('thead', {}, h('tr', {}, ...[t('details.time'), t('details.type'), t('details.command'), t('details.evidence'), t('details.alert')].map((title) => h('th', { scope: 'col' }, title)))),
       h('tbody', {}, ...detailRows)
     )
   );
@@ -160,7 +152,7 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
     details.toggleAttribute('hidden', !open);
     if (toggleButton) {
       toggleButton.setAttribute('aria-expanded', String(open));
-      toggleButton.textContent = open ? 'Ocultar detalhes' : 'Ver detalhes';
+      toggleButton.textContent = open ? t('details.hide') : t('details.show');
     }
     detailRows.forEach((row, index) => row.classList.toggle('tlog-on', index === focus));
     pins.forEach((pin, index) => pin.classList.toggle('tlog-on', index === focus));
@@ -171,7 +163,7 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
       h('button', {
         type: 'button',
         className: `tlog-pin tlog-kind-${event.kind}`,
-        'aria-label': `${event.label} às ${at(event.t)}: ${event.command}`,
+        'aria-label': `${t('event.at', { kind: kindName(event.kind), time: at(event.t) })}: ${event.command}`,
         onClick: () => toggle(true, index),
       }),
       () => eventBalloon(event)
@@ -182,7 +174,8 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
   });
 
   const chips = h('div', { className: 'tlog-chips' });
-  for (const [kind, label] of KINDS) {
+  for (const kind of KINDS) {
+    const label = kindName(kind);
     const list = events.filter((event) => event.kind === kind);
     if (list.length > 0) {
       const failed = list.filter((event) => event.failed).length;
@@ -190,7 +183,7 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
         balloon.attach(
           h('button', { type: 'button', className: `tlog-chip tlog-kind-${kind}`, onClick: () => toggle() }, label, h('b', {}, String(list.length))),
           () => [
-            h('strong', {}, `${label}: ${list.length}${failed ? ` (${failed} negado)` : ''}`),
+            h('strong', {}, `${label}: ${list.length}${failed ? ` ${t('event.deniedCount', { count: failed })}` : ''}`),
             ...list.slice(0, 6).map((event) => h('code', {}, `${at(event.t)}  ${event.command}`)),
           ]
         )
@@ -201,8 +194,8 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
     chips.append(
       h(
         'span',
-        { className: 'tlog-chip tlog-kind-ssh', title: 'O login veio da própria máquina. A origem é provável, não confirmada.' },
-        login.parentStartedAt ? `Provável salto da sessão de ${formatTime(login.parentStartedAt)}` : 'Login local'
+        { className: 'tlog-chip tlog-kind-ssh', title: t('login.localHelp') },
+        login.parentStartedAt ? t('login.likelyJump', { time: formatTime(login.parentStartedAt) }) : t('login.local')
       )
     );
   } else if (login?.srcip) {
@@ -211,23 +204,23 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
         'span',
         {
           className: 'tlog-chip tlog-chip-neutral',
-          title: login.ambiguous ? 'Outro login ocorreu quase ao mesmo tempo: a origem pode ser de outra sessão.' : 'Alerta de login do Wazuh',
+          title: login.ambiguous ? t('login.ambiguous') : t('login.alert'),
         },
-        `Login de ${login.srcip}${login.ambiguous ? ' (incerto)' : ''}`
+        `${t('login.from', { ip: login.srcip })}${login.ambiguous ? ` ${t('login.uncertain')}` : ''}`
       )
     );
   }
   if (events.length > 0) {
-    toggleButton = h('button', { type: 'button', className: 'tlog-link', 'aria-expanded': 'false', onClick: () => toggle() }, 'Ver detalhes');
+    toggleButton = h('button', { type: 'button', className: 'tlog-link', 'aria-expanded': 'false', onClick: () => toggle() }, t('details.show'));
     chips.append(toggleButton);
   } else if (insights.promptsSeen > 0) {
-    chips.append(h('span', { className: 'tlog-quiet' }, insights.partialDetection ? 'Nenhum comando crítico entre os tipos ligados' : 'Nenhum comando crítico reconhecido'));
+    chips.append(h('span', { className: 'tlog-quiet' }, insights.partialDetection ? t('summary.noneEnabled') : t('summary.none')));
   } else {
     chips.append(
       h(
         'span',
-        { className: 'tlog-quiet', title: 'Sessões sem prompt reconhecido, como ssh host comando, não mostram o que foi executado.' },
-        'Comandos não visíveis nesta captura'
+        { className: 'tlog-quiet', title: t('summary.noPromptHelp') },
+        t('summary.notVisible')
       )
     );
   }
@@ -235,8 +228,8 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
     chips.append(
       h(
         'span',
-        { className: 'tlog-badge', title: 'O usuário precisa da permissão read em wazuh-alerts-* para ver os alertas ligados à sessão.' },
-        'Alertas indisponíveis'
+        { className: 'tlog-badge', title: t('summary.alertsPermission') },
+        t('summary.alertsUnavailable')
       )
     );
   }
@@ -247,20 +240,20 @@ export function renderInsights(insights, fallbackStart, balloon, openAt) {
       'div',
       { className: 'tlog-timeline-times' },
       timeLink(at(0), { kind: 'start' }),
-      h('span', {}, `Ativa ${formatDuration(activeMs / 1000)} · Ociosa ${formatDuration(idleMs / 1000)}`),
+      h('span', {}, t('timeline.totals', { active: formatDuration(activeMs / 1000), idle: formatDuration(idleMs / 1000) })),
       timeLink(at(end), { kind: 'end' })
     ),
-    warnings.length > 0 ? h('span', { className: 'tlog-badge', title: warnings.join(' ') }, 'parcial') : null,
+    warnings.length > 0 ? h('span', { className: 'tlog-badge', title: warnings.join(' ') }, t('timeline.partial')) : null,
   ];
   return { timeline: timeline.filter(Boolean), summary: [chips, details] };
 }
 
-export const SESSION_FILTERS = [
-  ['all', 'Todas'],
-  ['destructive', 'Destrutivos'],
+export const sessionFilters = () => [
+  ['all', t('filter.all')],
+  ['destructive', t('filter.destructive')],
   ['sudo', 'sudo'],
   ['ssh', 'SSH'],
-  ['wazuh', 'Com alerta do Wazuh'],
+  ['wazuh', t('filter.wazuh')],
 ];
 
 const FILTER_KINDS = { destructive: ['destructive', 'pipe'], sudo: ['sudo', 'su'], ssh: ['ssh'] };

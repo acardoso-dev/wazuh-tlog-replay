@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 const { ALERT_PATTERN, INDEX_PATTERN, INVENTORY_PATTERN } = require('./queries');
 
 const RECENT_DAYS = 7;
@@ -51,24 +52,24 @@ function retentionAge(policy) {
 async function permissionCheck(client, id, title, index, needed) {
   try {
     await client.search({ index, ignore_unavailable: true, allow_no_indices: true, body: { size: 0, query: { match_none: {} } } });
-    return { id, title, status: 'ok', detail: `Seu usuário lê ${index}.` };
+    return { id, title, status: 'ok', detail: t('check.canRead', { index }) };
   } catch (error) {
-    if (denied(error)) return { id, title, status: 'attention', detail: `Seu usuário não lê ${index}. ${needed}` };
-    return { id, title, status: 'unknown', detail: `Não foi possível verificar ${index}.` };
+    if (denied(error)) return { id, title, status: 'attention', detail: t('check.cannotRead', { index, needed }) };
+    return { id, title, status: 'unknown', detail: t('check.failed', { index }) };
   }
 }
 
 async function retentionCheck(client) {
-  const title = 'Retenção';
+  const title = t('check.retention.title');
   const unknown = (detail) => ({ id: 'retention', title, status: 'unknown', detail });
   let explain;
   try {
     explain = (await client.transport.request({ method: 'GET', path: `/_plugins/_ism/explain/${INDEX_PATTERN}` })).body;
   } catch (error) {
-    return unknown(denied(error) ? 'Seu usuário não pode ver as políticas de retenção.' : 'Não foi possível consultar as políticas de retenção.');
+    return unknown(denied(error) ? t('check.retention.denied') : t('check.retention.failed'));
   }
   const indices = Object.entries(explain ?? {}).filter(([name]) => name !== 'total_managed_indices');
-  if (indices.length === 0) return unknown('Ainda não há índices de gravação para verificar.');
+  if (indices.length === 0) return unknown(t('check.retention.noIndices'));
   const policyOf = ([, info]) => info?.['index.plugins.index_state_management.policy_id'] ?? info?.policy_id ?? null;
   const unmanaged = indices.filter((entry) => !policyOf(entry));
   if (unmanaged.length > 0) {
@@ -76,7 +77,7 @@ async function retentionCheck(client) {
       id: 'retention',
       title,
       status: 'attention',
-      detail: `${unmanaged.length} de ${indices.length} índice(s) sem política: essas gravações não são apagadas automaticamente.`,
+      detail: t('check.retention.unmanaged', { count: unmanaged.length, total: indices.length }),
     };
   }
   const ids = [...new Set(indices.map(policyOf))];
@@ -93,7 +94,7 @@ async function retentionCheck(client) {
     id: 'retention',
     title,
     status: 'ok',
-    detail: `Política ${ids.join(', ')} ativa${age ? `: apaga índices com mais de ${age.replace(/^(\d+)d$/, '$1 dias')}` : ''}.`,
+    detail: age ? t('check.retention.activeAge', { policy: ids.join(', '), age: age.replace(/^(\d+)d$/, (match, days) => t('check.retention.days', { days })) }) : t('check.retention.active', { policy: ids.join(', ') }),
   };
 }
 
@@ -101,7 +102,7 @@ async function retentionCheck(client) {
 async function buildDiagnostics(client, nowMs = Date.now()) {
   const checks = [];
   let hosts = [];
-  const title = 'Gravações';
+  const title = t('check.logs.title');
   try {
     const { body } = await client.search({
       index: INDEX_PATTERN,
@@ -113,25 +114,25 @@ async function buildDiagnostics(client, nowMs = Date.now()) {
     const total = body?.hits?.total?.value ?? 0;
     checks.push(
       total > 0
-        ? { id: 'logs', title, status: 'ok', detail: `${total} pedaço(s) de ${hosts.length} máquina(s) em ${INDEX_PATTERN}.` }
-        : { id: 'logs', title, status: 'attention', detail: `Nenhuma gravação em ${INDEX_PATTERN}. Confira a coleta nas máquinas.` }
+        ? { id: 'logs', title, status: 'ok', detail: t('check.logs.ok', { total, hosts: hosts.length, index: INDEX_PATTERN }) }
+        : { id: 'logs', title, status: 'attention', detail: t('check.logs.empty', { index: INDEX_PATTERN }) }
     );
   } catch (error) {
     checks.push(
       denied(error)
-        ? { id: 'logs', title, status: 'attention', detail: `Seu usuário não lê ${INDEX_PATTERN}, então não vê as sessões.` }
-        : { id: 'logs', title, status: 'unknown', detail: `Não foi possível consultar ${INDEX_PATTERN}.` }
+        ? { id: 'logs', title, status: 'attention', detail: t('check.logs.denied', { index: INDEX_PATTERN }) }
+        : { id: 'logs', title, status: 'unknown', detail: t('check.logs.failed', { index: INDEX_PATTERN }) }
     );
   }
   checks.push(
-    await permissionCheck(client, 'alerts', 'Permissão nos alertas', ALERT_PATTERN, 'As sessões mostram só o que está na captura.'),
-    await permissionCheck(client, 'inventory', 'Permissão no inventário', INVENTORY_PATTERN, 'O filtro por agente não funciona.'),
+    await permissionCheck(client, 'alerts', t('check.alerts.title'), ALERT_PATTERN, t('check.alerts.needed')),
+    await permissionCheck(client, 'inventory', t('check.inventory.title'), INVENTORY_PATTERN, t('check.inventory.needed')),
     await retentionCheck(client),
     {
       id: 'endpoints',
-      title: 'Limites de disco nas máquinas',
+      title: t('check.endpoints.title'),
       status: 'unknown',
-      detail: 'O dashboard não enxerga estes limites. Confira em cada máquina, como descrito na documentação do projeto.',
+      detail: t('check.endpoints.detail'),
     }
   );
   return { checks, hosts, recentDays: RECENT_DAYS, checkedAt: new Date(nowMs).toISOString() };

@@ -7,20 +7,14 @@ import recordAllScript from '../../collector/tlog-record-all.sh';
 import recordAllService from '../../collector/tlog-record-all.service';
 import tlogConf from '../../collector/tlog-rec-session.conf';
 import { buildInstallScript, validLogin, validShell, validateInstallInput } from '../lib/install_script';
+import { t, tn } from '../lib/i18n';
 import { h } from './dom';
 
 const FILES = { fluentConf, logrotateConf, logrotateService, logrotateTimer, recordAllPath, recordAllScript, recordAllService, tlogConf };
 const STORAGE_KEY = 'tlogReplay.install';
 const SCRIPT_NAME = 'tlog-install.sh';
-const STATUS = {
-  recording: ['Gravando', 'Já há sessões desta máquina no índice.', 'ok'],
-  installed: ['Instalado, sem sessões', 'Os pacotes existem, mas ainda não chegou nenhuma sessão: ative a gravação de um usuário.', 'attention'],
-  partial: ['Instalação incompleta', 'Só um dos pacotes foi encontrado.', 'attention'],
-  missing: ['Falta instalar', 'O inventário não encontrou o tlog nem o Fluent Bit.', 'attention'],
-  unknown: ['Não verificado', 'Seu usuário não lê o inventário de pacotes.', 'unknown'],
-  unsupported: ['Sem suporte', 'O tlog só funciona em Linux.', 'unknown'],
-  manual: ['Instalação manual', 'O script não atende esta distribuição. Siga a instalação manual na documentação do projeto.', 'unknown'],
-};
+const STATUS_LEVEL = { recording: 'ok', installed: 'attention', partial: 'attention', missing: 'attention', unknown: 'unknown', unsupported: 'unknown', manual: 'unknown' };
+const machineState = (status) => [t(`machine.${status}.label`), t(`machine.${status}.help`), STATUS_LEVEL[status]];
 
 const readStored = () => {
   try {
@@ -46,14 +40,14 @@ async function copyText(text) {
   }
 }
 
-function copyButton(getText, label = 'Copiar') {
+function copyButton(getText, label = t('install.copy')) {
   const button = h(
     'button',
     {
       type: 'button',
       onClick: async () => {
         const done = await copyText(getText());
-        button.textContent = done ? 'Copiado' : 'Não foi possível copiar';
+        button.textContent = done ? t('install.copied') : t('install.copyFailed');
         setTimeout(() => {
           button.textContent = label;
         }, 2000);
@@ -100,7 +94,7 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
   let recordMode = 'all';
   let emergency = '';
 
-  const machineStatus = h('p', { className: 'tlog-status', role: 'status' }, 'Carregando...');
+  const machineStatus = h('p', { className: 'tlog-status', role: 'status' }, t('common.loading'));
   const machineBody = h('tbody');
   const machineTable = h(
     'div',
@@ -108,7 +102,7 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
     h(
       'table',
       { className: 'tlog-simple-table' },
-      h('thead', {}, h('tr', {}, ...['Agente', 'Máquina', 'Sistema', 'Situação', ''].map((title) => h('th', { scope: 'col' }, title)))),
+      h('thead', {}, h('tr', {}, ...[t('install.column.agent'), t('install.column.machine'), t('install.column.system'), t('install.column.status'), ''].map((title) => h('th', { scope: 'col' }, title)))),
       machineBody
     )
   );
@@ -127,20 +121,20 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
     return { id, input, error, element: h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, label), h('span', { className: 'tlog-setting-help' }, help), input, error) };
   };
   const fields = [
-    field('indexerName', 'Nome do indexador', 'O nome que consta no certificado do indexador.', { placeholder: 'wazuh.indexer' }),
-    field('indexerIp', 'IP do indexador (opcional)', 'Só se a máquina não resolver esse nome: o script o adiciona ao /etc/hosts, e o TLS continua validado.', { placeholder: '192.168.64.1' }),
-    field('writerUser', 'Usuário de escrita', 'O usuário do Fluent Bit. A senha é pedida ao rodar o script, e nunca passa pelo painel.'),
-    field('caPem', 'CA do indexador', 'Certificado público, em formato PEM. Fica em /etc/fluent-bit/root-ca.pem.', { area: true }),
+    field('indexerName', t('install.indexerName'), t('install.indexerNameHelp'), { placeholder: 'wazuh.indexer' }),
+    field('indexerIp', t('install.indexerIp'), t('install.indexerIpHelp'), { placeholder: '192.168.64.1' }),
+    field('writerUser', t('install.writerUser'), t('install.writerUserHelp')),
+    field('caPem', t('install.ca'), t('install.caHelp'), { area: true }),
   ];
 
-  const invalid = h('p', { className: 'tlog-error', hidden: 'hidden' }, 'Corrija os campos acima para gerar o script.');
-  const scriptBlocked = h('p', { className: 'tlog-quiet', hidden: 'hidden' }, 'Este script não atende a máquina escolhida.');
+  const invalid = h('p', { className: 'tlog-error', hidden: 'hidden' }, t('install.fixFields'));
+  const scriptBlocked = h('p', { className: 'tlog-quiet', hidden: 'hidden' }, t('install.scriptBlocked'));
   const scriptText = () => {
     if (Object.keys(validateInstallInput(values)).length > 0) return '';
     return buildInstallScript({ ...values, files: FILES, version: __TLOG_VERSION__ });
   };
   const pasteCommand = () => `cat > ${SCRIPT_NAME} <<'TLOG_REPLAY_INSTALADOR'\n${scriptText()}TLOG_REPLAY_INSTALADOR`;
-  const copyScript = copyButton(pasteCommand, 'Copiar comando que cria o script');
+  const copyScript = copyButton(pasteCommand, t('install.copyCommand'));
   const download = h(
     'button',
     {
@@ -152,29 +146,29 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
         setTimeout(() => URL.revokeObjectURL(link.href), 60000);
       },
     },
-    'Baixar script'
+    t('install.download')
   );
   const scriptPreview = h('code');
   const runBlock = codeBlock(() => `sudo bash ${SCRIPT_NAME}`);
   const scriptArea = h(
     'div',
     {},
-    h('p', {}, 'Leve o script até a máquina: baixe e copie, ou cole no terminal dela o comando que o cria. Depois, rode:'),
+    h('p', {}, t('install.carryScript')),
     h('div', { className: 'tlog-install-actions' }, copyScript, download),
     runBlock.element,
     h(
       'ul',
       { className: 'tlog-install-list' },
-      h('li', {}, 'Confere a conexão e a senha antes de instalar os pacotes.'),
-      h('li', {}, 'Instala tlog, Fluent Bit e logrotate, com os limites de disco descritos na documentação do projeto.'),
-      h('li', {}, 'Envia as sessões só pelo Fluent Bit, e avisa se o agente do Wazuh também estiver lendo o log do tlog.'),
-      h('li', {}, 'Pode rodar de novo com segurança. Não ativa a gravação de nenhum usuário.')
+      h('li', {}, t('install.list.checks')),
+      h('li', {}, t('install.list.installs')),
+      h('li', {}, t('install.list.sends')),
+      h('li', {}, t('install.list.safe'))
     ),
-    h('details', { className: 'tlog-install-details' }, h('summary', {}, 'Ver o script completo'), h('pre', {}, scriptPreview))
+    h('details', { className: 'tlog-install-details' }, h('summary', {}, t('install.viewScript')), h('pre', {}, scriptPreview))
   );
 
-  const loginInput = h('input', { type: 'text', 'aria-label': 'Usuário a gravar', spellcheck: 'false', placeholder: 'kali', onInput: (event) => { login = event.target.value.trim(); refresh(); } });
-  const shellInput = h('input', { type: 'text', 'aria-label': 'Shell atual do usuário', spellcheck: 'false', value: previousShell, onInput: (event) => { previousShell = event.target.value.trim(); shellEdited = true; refresh(); } });
+  const loginInput = h('input', { type: 'text', 'aria-label': t('install.loginToRecord'), spellcheck: 'false', placeholder: 'kali', onInput: (event) => { login = event.target.value.trim(); refresh(); } });
+  const shellInput = h('input', { type: 'text', 'aria-label': t('install.currentShell'), spellcheck: 'false', value: previousShell, onInput: (event) => { previousShell = event.target.value.trim(); shellEdited = true; refresh(); } });
   const loginName = () => (validLogin(login) ? login : 'USUARIO');
   const shellName = () => (validShell(previousShell) ? previousShell : '/bin/bash');
   const checkShell = codeBlock(() => `getent passwd ${loginName()} | cut -d: -f7`);
@@ -187,8 +181,8 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
   const enableAll = codeBlock(() => `sudo tlog-record-all enable ${emergencyText()}`);
   const statusAll = codeBlock(() => 'sudo tlog-record-all status');
   const disableAll = codeBlock(() => 'sudo tlog-record-all disable');
-  const emergencyInput = h('input', { type: 'text', 'aria-label': 'Usuários de emergência', spellcheck: 'false', placeholder: 'suporte', onInput: (event) => { emergency = event.target.value.trim(); refresh(); } });
-  const emergencyError = h('div', { className: 'tlog-error tlog-setting-error', hidden: 'hidden' }, 'Use nomes de usuário Linux, separados por espaço.');
+  const emergencyInput = h('input', { type: 'text', 'aria-label': t('install.emergency'), spellcheck: 'false', placeholder: 'suporte', onInput: (event) => { emergency = event.target.value.trim(); refresh(); } });
+  const emergencyError = h('div', { className: 'tlog-error tlog-setting-error', hidden: 'hidden' }, t('install.emergencyInvalid'));
   const modeInput = (value, label) => {
     const input = h('input', { type: 'radio', name: 'tlog-record-mode', value, onChange: () => { recordMode = value; refresh(); } });
     input.checked = value === recordMode;
@@ -197,23 +191,23 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
   const allArea = h(
     'div',
     {},
-    h('p', {}, 'Todo usuário local passa a ser gravado, e os criados depois também, assim que aparecem no /etc/passwd. Quem trocar o próprio shell volta a ser gravado.'),
-    h('p', { className: 'tlog-setting-warning' }, 'Se o tlog falhar, nenhum usuário gravado consegue entrar. Por isso, um usuário de emergência com senha e sudo fica fora da gravação, e o comando se recusa a rodar sem ele. As sessões desse usuário não aparecem aqui: use-o só para manutenção.'),
-    h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, 'Usuários de emergência'), h('span', { className: 'tlog-setting-help' }, 'Separados por espaço. Eles precisam existir na máquina.'), emergencyInput, emergencyError),
-    h('p', {}, 'Se ainda não existir, crie o usuário de emergência:'),
+    h('p', {}, t('install.all.intro')),
+    h('p', { className: 'tlog-setting-warning' }, t('install.all.warning')),
+    h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, t('install.emergency')), h('span', { className: 'tlog-setting-help' }, t('install.all.emergencyHelp')), emergencyInput, emergencyError),
+    h('p', {}, t('install.all.create')),
     createEmergency.element,
-    h('p', {}, 'Ative a gravação de todos:'),
+    h('p', {}, t('install.all.enable')),
     enableAll.element,
-    h('p', {}, 'Para ver quem está sendo gravado, a qualquer momento:'),
+    h('p', {}, t('install.all.status')),
     statusAll.element,
     h(
       'ul',
       { className: 'tlog-install-list' },
-      h('li', {}, 'Vale só para usuários locais. Usuários de LDAP ou AD não estão no /etc/passwd e precisam do SSSD, como no guia de instalação do projeto.'),
-      h('li', {}, 'Comandos sem terminal, como ssh host comando, também são gravados. Contas de serviço com shell real entram: confira a lista antes e inclua as de automação entre as exceções.'),
-      h('li', {}, 'Baixar arquivos de um usuário gravado por rsync ou scp -O fica limitado a cerca de 17 KB/s, e o conteúdo vai para o log. Para sftp e scp comum, use Subsystem sftp internal-sftp no sshd, sabendo que essas transferências deixam de ser gravadas. Enviar arquivos para a máquina não é afetado.'),
-      h('li', {}, 'Para mudar as exceções depois, rode disable e enable de novo com a lista nova.'),
-      h('li', {}, 'O root não muda, mas o que ele faz após um sudo ou su em uma sessão gravada aparece na gravação.')
+      h('li', {}, t('install.all.localOnly')),
+      h('li', {}, t('install.all.noTerminal')),
+      h('li', {}, t('install.all.downloads')),
+      h('li', {}, t('install.all.change')),
+      h('li', {}, t('install.all.root'))
     )
   );
   const oneArea = h('div', {});
@@ -223,8 +217,8 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
   const kaliNote = h(
     'p',
     { className: 'tlog-settings-notice', hidden: 'hidden' },
-    'O prompt do Kali (└─$) está desligado. As sessões são gravadas, mas os comandos críticos só aparecem com esse formato ligado. ',
-    h('button', { type: 'button', className: 'tlog-link', onClick: () => onOpenSettings() }, 'Abrir Configurações')
+    t('install.kaliNote'),
+    h('button', { type: 'button', className: 'tlog-link', onClick: () => onOpenSettings() }, t('install.openSettings'))
   );
 
   const element = h(
@@ -233,51 +227,51 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
     h(
       'p',
       { className: 'tlog-settings-notice' },
-      'A instalação é feita em cada máquina. O agente do Wazuh não executa comandos remotos por padrão, e liberar isso permitiria rodar comandos como root em todas elas a partir do painel.'
+      t('install.notice')
     ),
     step(
       1,
-      'Escolha a máquina',
-      h('p', { className: 'tlog-quiet' }, 'A situação vem do inventário do Wazuh, que pode levar alguns minutos para mostrar uma instalação recente.'),
+      t('install.step1'),
+      h('p', { className: 'tlog-quiet' }, t('install.step1Help')),
       machineStatus,
       machineTable,
       machineNote
     ),
     step(
       2,
-      'Informe o indexador',
-      h('p', { className: 'tlog-quiet' }, 'Antes da primeira máquina, crie o usuário de escrita e aplique o modelo do índice e as regras do manager, como no guia de instalação do projeto.'),
+      t('install.step2'),
+      h('p', { className: 'tlog-quiet' }, t('install.step2Help')),
       h('div', { className: 'tlog-install-fields' }, ...fields.map(({ element: item }) => item))
     ),
-    step(3, 'Rode o script na máquina', invalid, scriptBlocked, scriptArea),
+    step(3, t('install.step3'), invalid, scriptBlocked, scriptArea),
     step(
       4,
-      'Ative a gravação',
+      t('install.step4'),
       h(
         'p',
         { className: 'tlog-setting-warning' },
-        'Um erro no shell pode impedir o login. Mantenha outra sessão aberta, com um usuário administrativo sem gravação, até confirmar que o login funciona.'
+        t('install.step4Warning')
       ),
-      h('div', { className: 'tlog-install-modes', role: 'group', 'aria-label': 'Quem gravar' }, modeInput('all', 'Todos os usuários'), modeInput('one', 'Só um usuário')),
+      h('div', { className: 'tlog-install-modes', role: 'group', 'aria-label': t('install.whoToRecord') }, modeInput('all', t('install.mode.all')), modeInput('one', t('install.mode.one'))),
       allArea,
       oneArea
     ),
     step(
       5,
-      'Confirme',
-      h('p', {}, 'Abra uma sessão nova com um usuário gravado, rode alguns comandos e veja se ela aparece na aba Sessões em alguns segundos. Se não aparecer, confira os serviços e o log na máquina:'),
+      t('install.step5'),
+      h('p', {}, t('install.step5Help')),
       verify.element,
       logs.element,
       kaliNote,
       h(
         'details',
         { className: 'tlog-install-details' },
-        h('summary', {}, 'Desfazer'),
-        h('p', {}, 'Se ativou para todos, isto restaura o shell de cada usuário:'),
+        h('summary', {}, t('install.undo')),
+        h('p', {}, t('install.undoAll')),
         disableAll.element,
-        h('p', {}, 'Se ativou para um usuário, volte o shell dele:'),
+        h('p', {}, t('install.undoOne')),
         rollback.element,
-        h('p', {}, 'Pare a coleta e apague a senha do usuário de escrita guardada na máquina. Os pacotes e o log gravado continuam nela:'),
+        h('p', {}, t('install.undoCollector')),
         uninstall.element
       )
     )
@@ -287,20 +281,20 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
       h(
         'div',
         { className: 'tlog-install-fields' },
-        h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, 'Usuário a gravar'), loginInput),
-        h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, 'Shell atual do usuário'), h('span', { className: 'tlog-setting-help' }, 'Usado só no comando de desfazer. O primeiro comando abaixo mostra qual é.'), shellInput)
+        h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, t('install.loginToRecord')), loginInput),
+        h('label', { className: 'tlog-install-field' }, h('span', { className: 'tlog-setting-title' }, t('install.currentShell')), h('span', { className: 'tlog-setting-help' }, t('install.shellHelp')), shellInput)
       ),
-      h('p', {}, 'Veja o shell atual:'),
+      h('p', {}, t('install.viewShell')),
       checkShell.element,
-      h('p', {}, 'Ative a gravação:'),
+      h('p', {}, t('install.activateOne')),
       activate.element,
-      h('p', { className: 'tlog-quiet' }, 'O usuário gravado passa a usar o bash, mesmo que usasse outro shell. Scripts de início de sessão de outros shells deixam de rodar.')
+      h('p', { className: 'tlog-quiet' }, t('install.bashNote'))
   );
 
   function select(machine) {
     selected = machine;
     for (const row of machineBody.children) row.classList.toggle('tlog-selected', row.dataset.id === machine?.id);
-    machineNote.textContent = machine ? `${machine.name ?? machine.id}: ${STATUS[machine.status][1]}` : '';
+    machineNote.textContent = machine ? `${machine.name ?? machine.id}: ${machineState(machine.status)[1]}` : '';
     machineNote.toggleAttribute('hidden', !machine);
     // O Kali usa zsh por padrão. Se o usuário já mudou o campo, o valor dele fica.
     if (!shellEdited) {
@@ -343,7 +337,7 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
     const current = ++request;
     loaded = true;
     machineStatus.className = 'tlog-status';
-    machineStatus.textContent = 'Carregando...';
+    machineStatus.textContent = t('common.loading');
     try {
       const [list, defaults] = await Promise.all([http.get('/api/tlog_replay/machines'), http.get('/api/tlog_replay/install/defaults').catch(() => ({}))]);
       if (current !== request) return;
@@ -352,17 +346,17 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
       for (const { id, input } of fields) input.value = values[id];
       ({ machines } = list);
       if (!list.inventoryVisible) {
-        machineStatus.textContent = 'Seu usuário não lê o inventário do Wazuh. O script abaixo funciona mesmo assim.';
+        machineStatus.textContent = t('install.noInventory');
       } else if (machines.length === 0) {
-        machineStatus.textContent = 'Nenhum agente no inventário. O script abaixo funciona mesmo assim.';
+        machineStatus.textContent = t('install.noAgents');
       } else {
         const pending = machines.filter(({ status }) => ['missing', 'partial', 'installed'].includes(status)).length;
-        machineStatus.textContent = `${machines.length} agente(s), ${pending} com instalação ou gravação pendente.${list.truncated ? ` Há mais agentes no inventário: só os primeiros ${machines.length} são mostrados.` : ''}`;
+        machineStatus.textContent = `${tn('install.agents', machines.length, { pending })}${list.truncated ? t('install.agentsTruncated', { count: machines.length }) : ''}`;
       }
       machineTable.toggleAttribute('hidden', machines.length === 0);
       machineBody.replaceChildren(
         ...machines.map((machine) => {
-          const [text, help, level] = STATUS[machine.status];
+          const [text, help, level] = machineState(machine.status);
           const row = h(
             'tr',
             {},
@@ -370,7 +364,7 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
             h('td', {}, machine.hostname ?? '-'),
             h('td', {}, [machine.os, machine.architecture].filter(Boolean).join(' · ') || '-'),
             h('td', { title: help }, h('span', { className: 'tlog-diagnostics-name' }, h('i', { className: `tlog-dot tlog-dot-${level}` }), text)),
-            h('td', {}, h('button', { type: 'button', 'aria-label': `Selecionar ${machine.name ?? machine.id}`, onClick: () => select(machine) }, 'Selecionar'))
+            h('td', {}, h('button', { type: 'button', 'aria-label': t('install.selectMachine', { name: machine.name ?? machine.id }), onClick: () => select(machine) }, t('install.select')))
           );
           row.dataset.id = machine.id ?? '';
           return row;
@@ -381,7 +375,7 @@ export function createInstallPanel({ http, getAgentId, getSettings, onOpenSettin
     } catch (error) {
       if (current !== request) return;
       machineStatus.className = 'tlog-status tlog-error';
-      machineStatus.textContent = error?.body?.message || error?.message || 'Não foi possível carregar as máquinas.';
+      machineStatus.textContent = error?.body?.message || error?.message || t('install.loadFailed');
       refresh();
     }
   }

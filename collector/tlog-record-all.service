@@ -1,11 +1,11 @@
 [Unit]
-Description=Ativa a gravação do Session Replay nos usuários locais
-# Sem isto, várias trocas de shell em sequência fariam o systemd parar de atender a unidade.
+Description=Enable Session Replay recording for local users
+# Without this, several shell changes in a row would make systemd stop serving the unit.
 StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot
-# Dá tempo de o adduser terminar antes de mexer no mesmo usuário.
+# Gives adduser time to finish before changing the same user.
 ExecStartPre=/bin/sleep 2
 ExecStart=/usr/local/sbin/tlog-record-all sync
 

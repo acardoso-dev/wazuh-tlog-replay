@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 /**
  * Reconhece comandos críticos em uma captura e liga cada um aos alertas do Wazuh.
  *
@@ -26,8 +27,8 @@ const FLAG = '-[\\w-]*\\s+';
 const RM = `rm\\s+(?:${FLAG})*?(?=-\\w*[rf]|--recursive|--force)${FLAG}(?:${FLAG})*\\S`;
 const DESTRUCTIVE = `(sudo\\s+${PATH_PREFIX})?(${RM}|dd\\s[^;&|]*\\bof=|mkfs(\\.\\w+)?\\s|shred\\s|wipefs\\s|shutdown\\b|reboot\\b|userdel\\s|chmod\\s+(-R\\s+)?777\\s|find\\s[^;&|]*\\s-delete\\b)`;
 const KINDS = [
-  { id: 'destructive', label: 'Destrutivo', hint: 'rm -rf, dd, mkfs, shred, wipefs, shutdown, reboot, userdel, chmod 777, find -delete' },
-  { id: 'pipe', label: 'Pipe para shell', hint: 'curl ... | sh' },
+  { id: 'destructive', get label() { return t('kind.destructive'); }, hint: 'rm -rf, dd, mkfs, shred, wipefs, shutdown, reboot, userdel, chmod 777, find -delete' },
+  { id: 'pipe', get label() { return t('kind.pipe'); }, hint: 'curl ... | sh' },
   { id: 'sudo', label: 'sudo', hint: '' },
   { id: 'su', label: 'su', hint: '' },
   { id: 'ssh', label: 'SSH', hint: 'ssh, scp, sftp' },
@@ -40,10 +41,10 @@ const BUILT_IN = {
   ssh: new RegExp(`${COMMAND_START}(ssh|scp|sftp)\\s+\\S`),
 };
 const PROMPT_FORMATS = [
-  { id: 'debian', label: 'usuario@host:pasta$', hint: 'Debian, Ubuntu', source: '[\\w.-]+@[\\w.-]+:[^#$]*[#$]\\s' },
-  { id: 'rhel', label: '[usuario@host pasta]$', hint: 'Fedora, RHEL', source: '\\[[\\w.-]+@[\\w.-]+[^\\]]*\\][#$]\\s' },
-  { id: 'zsh', label: 'usuario@host pasta %', hint: 'zsh', source: '[\\w.-]+@[\\w.-]+ [^%#$]*[%#]\\s' },
-  { id: 'macos', label: 'host:pasta usuario$', hint: 'bash no macOS', source: '[\\w.-]+:\\S* [\\w.-]+[#$]\\s' },
+  { id: 'debian', get label() { return t('prompt.debian'); }, hint: 'Debian, Ubuntu', source: '[\\w.-]+@[\\w.-]+:[^#$]*[#$]\\s' },
+  { id: 'rhel', get label() { return t('prompt.rhel'); }, hint: 'Fedora, RHEL', source: '\\[[\\w.-]+@[\\w.-]+[^\\]]*\\][#$]\\s' },
+  { id: 'zsh', get label() { return t('prompt.zsh'); }, hint: 'zsh', source: '[\\w.-]+@[\\w.-]+ [^%#$]*[%#]\\s' },
+  { id: 'macos', get label() { return t('prompt.macos'); }, get hint() { return t('prompt.macosHint'); }, source: '[\\w.-]+:\\S* [\\w.-]+[#$]\\s' },
   // Prompt de duas linhas: o comando fica na segunda, depois de └─$.
   { id: 'kali', label: '└─$', hint: 'Kali Linux', source: '\\u2514\\u2500[#$]\\s' },
 ];

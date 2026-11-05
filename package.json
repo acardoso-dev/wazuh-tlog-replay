@@ -1,6 +1,6 @@
 {
   "name": "tlog-session-replay",
-  "version": "0.8.4",
+  "version": "0.9.0",
   "private": true,
   "description": "Plugin de replay de sessões de terminal gravadas pelo tlog, para o Wazuh dashboard",
   "license": "Apache-2.0",

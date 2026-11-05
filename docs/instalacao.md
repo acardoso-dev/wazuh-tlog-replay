@@ -1,5 +1,7 @@
 # Instalação
 
+[English](en/installation.md)
+
 São três partes: preparar o servidor, instalar o plugin no dashboard e configurar cada máquina que será gravada.
 
 ## Requisitos

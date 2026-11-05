@@ -1,6 +1,14 @@
 # Guia de uso
 
+[English](en/usage.md)
+
 O app fica em `/app/tlogReplay`, com o nome **Session Replay**, no grupo **Session recording** da sidebar, e tem um card em **Security operations**, na home. Ele também aparece na tela de cada agente, como aba e dentro do menu **More...**, e nesse caso mostra só as sessões daquele agente.
+
+## Idioma
+
+O seletor **Idioma**, no cabeçalho do app, troca entre inglês e português do Brasil. A escolha vale só para você, porque fica salva no seu navegador, e a tela continua na mesma aba. Alterações não salvas na aba **Configurações** se perdem na troca.
+
+No primeiro uso, o app segue o idioma do navegador: português se ele estiver em português, e inglês nos demais casos. Datas e horários acompanham o idioma escolhido.
 
 ## Sessões
 
@@ -58,6 +66,8 @@ A aba **Diagnóstico** é somente leitura e usa as permissões do usuário logad
 ![Aba Instalar](images/instalar.png)
 
 A aba **Instalar** mostra a situação de cada agente e gera um script para Ubuntu 22.04 e 24.04, Debian 12 e 13 e Kali. O script não contém senhas: ele pede a senha do usuário de escrita ao rodar e confere a conexão antes de instalar os pacotes. Ele também não ativa a gravação de nenhum usuário, o que é um passo separado na mesma aba.
+
+O script e os comandos que ele instala usam o idioma escolhido quando o script foi gerado.
 
 **A instalação não é remota.** O Wazuh agent vem com a execução de comandos remotos desligada (`logcollector.remote_commands=0` e `wazuh_command.remote_commands=0`), e o active response só roda scripts que já estão na máquina. Ligar essas opções daria ao painel o poder de rodar comandos como root em todos os agentes, então o plugin não usa esse caminho.
 

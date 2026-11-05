@@ -276,11 +276,11 @@ function matchRoute(pathname, method) {
   return null;
 }
 
-async function callApi(url, method, rawBody) {
+async function callApi(url, method, rawBody, headers = {}) {
   const found = matchRoute(url.pathname, method);
   if (!found) return reply(404, { message: 'rota não encontrada' });
   const { route, params } = found;
-  const request = {};
+  const request = { headers };
   const inputs = { query: Object.fromEntries(url.searchParams), params, body: rawBody ? JSON.parse(rawBody) : undefined };
   for (const part of ['query', 'params', 'body']) {
     const validate = route.validate && route.validate[part];
@@ -326,10 +326,10 @@ function toJson(response) {
 var http = {
   get: function (path, options) {
     var query = new URLSearchParams((options && options.query) || {}).toString();
-    return fetch(path + (query ? '?' + query : '')).then(toJson);
+    return fetch(path + (query ? '?' + query : ''), { headers: (options && options.headers) || {} }).then(toJson);
   },
   put: function (path, options) {
-    return fetch(path, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: options.body }).then(toJson);
+    return fetch(path, { method: 'PUT', headers: Object.assign({ 'content-type': 'application/json' }, options.headers), body: options.body }).then(toJson);
   }
 };
 var instance = exported.plugin();
@@ -341,7 +341,7 @@ instance.setup({
 });
 instance.start({ http: http, application: coreApplication });
 if (document.getElementById('app')) {
-  application.mount({ element: document.getElementById('app') }).then(function (unmount) { window.__unmount = unmount; });
+  application.mount({ element: document.getElementById('app'), history: { replace: function (next) { window.history.replaceState(null, '', window.location.pathname + (next.search || '')); } } }).then(function (unmount) { window.__unmount = unmount; });
 }`;
 // Reproduz a marcação do EuiCard (ouiCard__*) nos cards da home do Wazuh.
 const homeCard = (name) => `<div class="euiFlexItem"><div class="h-100"><div class="ouiCard wz-module-card-title h-100" data-test-subj="overviewWelcome${name}">
@@ -388,7 +388,7 @@ createServer(async (request, response) => {
     if (url.pathname.startsWith('/api/')) {
       const chunks = [];
       for await (const chunk of request) chunks.push(chunk);
-      const { statusCode, body, headers } = await callApi(url, request.method, Buffer.concat(chunks).toString());
+      const { statusCode, body, headers } = await callApi(url, request.method, Buffer.concat(chunks).toString(), request.headers);
       if (Buffer.isBuffer(body)) return send(statusCode, headers['content-type'], body, headers);
       return send(statusCode, 'application/json', JSON.stringify(body), headers);
     }

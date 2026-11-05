@@ -13,6 +13,22 @@ const HARNESS_PORT = 5690;
 const DEBUG_PORT = 9333;
 const WIDTH = 1440;
 const SCALE = 1.5;
+const LOCALES = [
+  {
+    locale: 'pt-BR',
+    folder: '',
+    details: 'Ver detalhes',
+    names: { sessions: 'sessoes', details: 'detalhes', replay: 'replay' },
+    tabs: [['Configurações', 'configuracoes'], ['Diagnóstico', 'diagnostico'], ['Instalar', 'instalar']],
+  },
+  {
+    locale: 'en',
+    folder: 'en',
+    details: 'Show details',
+    names: { sessions: 'sessions', details: 'details', replay: 'replay' },
+    tabs: [['Settings', 'settings'], ['Diagnostics', 'diagnostics'], ['Install', 'install']],
+  },
+];
 
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
@@ -82,7 +98,7 @@ const chrome = spawn(
   { stdio: 'ignore' }
 );
 
-async function capture() {
+async function capture({ locale, folder, details, names, tabs }) {
   const targets = await retry(async () => (await fetch(`http://127.0.0.1:${DEBUG_PORT}/json`)).json());
   const page = await connect(targets.find(({ type }) => type === 'page').webSocketDebuggerUrl);
   await page.send('Page.enable');
@@ -118,8 +134,9 @@ async function capture() {
     });
     await wait(400);
     const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
-    writeFileSync(join(output, `${name}.png`), Buffer.from(data, 'base64'));
-    console.log(`docs/images/${name}.png`);
+    mkdirSync(join(output, folder), { recursive: true });
+    writeFileSync(join(output, folder, `${name}.png`), Buffer.from(data, 'base64'));
+    console.log(`docs/images/${folder ? `${folder}/` : ''}${name}.png`);
   };
   const open = async () => {
     await page.send('Page.navigate', { url: `http://127.0.0.1:${HARNESS_PORT}/` });
@@ -134,15 +151,19 @@ async function capture() {
     mobile: false,
   });
 
-  await open();
-  await save('sessoes');
+  await page.send('Page.navigate', { url: `http://127.0.0.1:${HARNESS_PORT}/` });
+  await until(`document.readyState !== 'loading'`);
+  await evaluate(`localStorage.setItem('tlogReplay.locale', ${JSON.stringify(locale)})`);
 
-  await clickText('.tlog-app button', 'Ver detalhes');
+  await open();
+  await save(names.sessions);
+
+  await clickText('.tlog-app button', details);
   await wait(400);
-  await save('detalhes', 1100);
+  await save(names.details, 1100);
 
   await open();
-  await clickText('.tlog-app button', 'Ver detalhes');
+  await clickText('.tlog-app button', details);
   await wait(300);
   await evaluate(`(() => {
     const row = [...document.querySelectorAll('.tlog-app tr')]
@@ -158,9 +179,9 @@ async function capture() {
     mobile: false,
   });
   await evaluate(`document.querySelector('.tlog-replay').scrollIntoView({ block: 'start', behavior: 'instant' })`);
-  await save('replay');
+  await save(names.replay);
 
-  for (const [tab, name] of [['Configurações', 'configuracoes'], ['Diagnóstico', 'diagnostico'], ['Instalar', 'instalar']]) {
+  for (const [tab, name] of tabs) {
     await open();
     await clickText('.tlog-tabs button, .tlog-tabs [role="tab"]', tab);
     await wait(900);
@@ -169,9 +190,8 @@ async function capture() {
   page.close();
 }
 
-mkdirSync(output, { recursive: true });
 try {
-  await capture();
+  for (const locale of LOCALES) await capture(locale);
 } finally {
   chrome.kill();
   harness.kill();

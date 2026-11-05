@@ -1,5 +1,7 @@
 # Instalação manual em uma máquina gravada
 
+[English](en/manual-installation.md)
+
 A aba **Instalar** do plugin faz estes passos em Ubuntu, Debian e Kali, menos a preparação do servidor, descrita na [instalação](instalacao.md). Os passos abaixo valem para as demais distribuições e para conferir o que o script faz.
 
 Os passos abaixo foram testados no Ubuntu 24.04. Em outras distribuições, os nomes mudam; veja a [instalação oficial do Fluent Bit](https://docs.fluentbit.io/manual/installation/getting-started-with-fluent-bit). O script [test-env/provision.sh](../test-env/provision.sh) reúne estes passos.
@@ -119,7 +121,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now tlog-logrotate.timer
 Como esses limites afetam o uso:
 - **Disco necessário:** reserve pelo menos 1 GB para `/var/log/tlog` e mais 500 MB para `/var/lib/fluent-bit`. Uma partição própria protege o resto do sistema, mas uma partição pequena demais encerra as sessões mais cedo.
 - **Terminal mais lento:** com `delay`, comandos com muita saída demoram mais. Nos testes, 540 KB levaram 36 s. A opção `drop` não atrasa, mas descarta trechos, o que permite esconder atividade com muita saída.
-- **Perda de gravações:** o que o Fluent Bit não leu é perdido depois de 3 rotações. Se ele ficar parado por cerca de 3 horas com atividade, ou menos em picos de volume, parte das gravações não chega ao Wazuh indexer indexer. Com o indexador fora do ar, o limite do buffer descarta os dados mais antigos.
+- **Perda de gravações:** o que o Fluent Bit não leu é perdido depois de 3 rotações. Se ele ficar parado por cerca de 3 horas com atividade, ou menos em picos de volume, parte das gravações não chega ao Wazuh indexer. Com o indexador fora do ar, o limite do buffer descarta os dados mais antigos.
 - **Janela do `copytruncate`:** o que for gravado entre a cópia e o truncamento pode se perder. Isso não aconteceu nos testes, mas o risco existe.
 - **Sessões já abertas:** o limite de taxa só vale para sessões iniciadas depois da mudança.
 

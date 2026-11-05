@@ -1,5 +1,6 @@
 'use strict';
 
+const { t } = require('./i18n');
 /**
  * Converte mensagens JSON do tlog para o formato asciicast v2.
  *
@@ -39,17 +40,17 @@ function parseTiming(timing) {
     const start = TOKEN.lastIndex;
     const match = TOKEN.exec(timing);
     if (!match) {
-      throw new Error(`token inválido na posição ${start}`);
+      throw new Error(t('timing.badToken', { position: start }));
     }
     const [, op, first, second] = match;
     const needsSecond = op === '=' || op === '[' || op === ']';
     if (needsSecond !== (second !== undefined)) {
-      throw new Error(`token malformado "${match[0]}"`);
+      throw new Error(t('timing.malformedToken', { token: match[0] }));
     }
     const a = Number(first);
     const b = second === undefined ? 0 : Number(second);
     if (a > MAX_TIMING_VALUE || b > MAX_TIMING_VALUE) {
-      throw new Error(`valor fora do limite na posição ${start}`);
+      throw new Error(t('timing.outOfRange', { position: start }));
     }
     tokens.push({ op, a, b });
   }
@@ -64,7 +65,7 @@ function normalizeMessages(messages) {
 
   for (const message of messages) {
     if (!Number.isInteger(message.id)) {
-      warnings.push('Mensagem sem id válido foi ignorada.');
+      warnings.push(t('warning.noId'));
       continue;
     }
     const previous = byId.get(message.id);
@@ -76,7 +77,7 @@ function normalizeMessages(messages) {
   }
   if (conflicts > 0) {
     warnings.push(
-      `${conflicts} mensagem(ns) com id repetido e conteúdo diferente; foi mantida a primeira de cada. A gravação pode ter sido adulterada.`
+      t('warning.conflicts', { count: conflicts })
     );
   }
 
@@ -91,7 +92,7 @@ function normalizeMessages(messages) {
   }
   if (missing.length > 0) {
     warnings.push(
-      `Faltam pedaços da gravação (ids ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? ', ...' : ''}). O replay pode ter trechos ausentes.`
+      t('warning.missing', { ids: `${missing.slice(0, 10).join(', ')}${missing.length > 10 ? ', ...' : ''}` })
     );
   }
   return { ordered, warnings };
@@ -148,7 +149,7 @@ function convert(messages, options = {}) {
     try {
       tokens = parseTiming(String(message.timing ?? ''));
     } catch (error) {
-      problems.add(`Mensagem ${message.id} ignorada: timing inválido (${error.message}).`);
+      problems.add(t('warning.badTiming', { id: message.id, reason: error.message }));
       continue;
     }
 
@@ -166,7 +167,7 @@ function convert(messages, options = {}) {
       flushDecoder(cursor, code);
       const { text, short } = reader.take(count);
       if (short) {
-        problems.add(`Mensagem ${message.id}: há menos texto do que o timing indica.`);
+        problems.add(t('warning.shortText', { id: message.id }));
       }
       push(cursor, code, text);
     };
@@ -175,7 +176,7 @@ function convert(messages, options = {}) {
       reader.take(replacements); // caracteres de substituição, os bytes reais vêm do array
       const slice = bytes.slice(position, position + count).map((value) => value & 0xff);
       if (slice.length < count) {
-        problems.add(`Mensagem ${message.id}: há menos bytes do que o timing indica.`);
+        problems.add(t('warning.shortBytes', { id: message.id }));
       }
       push(cursor, code, decoders[code].decode(Uint8Array.from(slice), { stream: true }));
       return position + count;
@@ -188,7 +189,7 @@ function convert(messages, options = {}) {
         // Sem terminal, o tlog grava 0x0: não é um tamanho que o player consiga usar.
         if (a > 0 && b > 0) {
           if (a > MAX_COLS || b > MAX_ROWS) {
-            problems.add(`Tamanho de janela fora do normal (${a}x${b}) foi reduzido.`);
+            problems.add(t('warning.windowSize', { size: `${a}x${b}` }));
           }
           const cols = Math.min(a, MAX_COLS);
           const rows = Math.min(b, MAX_ROWS);

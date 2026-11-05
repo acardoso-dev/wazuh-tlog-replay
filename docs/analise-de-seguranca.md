@@ -1,5 +1,7 @@
 # Análise de segurança do Session Replay
 
+[English](en/security-analysis.md)
+
 **Versão analisada:** 0.8.1. **Versão corrigida:** 0.8.3. **Data:** 05/11/2026.
 
 Este documento explica como cada problema funcionava, para quem opera uma versão antiga ou revisa o projeto. Todas as correções estão na 0.8.3 e nas versões seguintes. Para relatar uma falha nova, veja [SECURITY.md](../SECURITY.md).
